@@ -39,9 +39,9 @@
  *
  * Finally _account_ cases inject into hook_user and won't work on its own.
  * Note that our basis is:
- * drupal_get_form('user_profile_form', ...);
+ * backdrop_get_form('user_profile_form', ...);
  * and NOT:
- * drupal_get_form('simplenews_subscriptions_account', ...);
+ * backdrop_get_form('simplenews_subscriptions_account', ...);
  *
  * see also user/user.module and user/user.pages.inc
  *
@@ -77,7 +77,7 @@ function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber
   $form['subscriptions']['#title'] = t('Current newsletter subscriptions');
 
   // if we don't override #validate, see user_profile_form_validate
-  // adding an own #submit leads to the situation where drupal omits execution of user_profile_form_submit completely
+  // adding an own #submit leads to the situation where backdrop omits execution of user_profile_form_submit completely
   $form['#submit'][] = 'simplenews_subscriptions_account_form_submit';
 }
 
@@ -101,10 +101,10 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
     }
   }
   if ($user->uid == $account->uid) {
-    drupal_set_message(t('Your newsletter subscriptions have been updated.'));
+    backdrop_set_message(t('Your newsletter subscriptions have been updated.'));
   }
   else {
-    drupal_set_message(t('The newsletter subscriptions for user %account have been updated.', array('%account' => $account->name)));
+    backdrop_set_message(t('The newsletter subscriptions for user %account have been updated.', array('%account' => $account->name)));
   }
 }
 
@@ -181,19 +181,19 @@ function simplenews_block_form_submit($form, &$form_state) {
     case 'subscribe':
       simplenews_subscribe_user($form_state['values']['mail'], $tid, $confirm, 'website');
       if ($confirm) {
-        drupal_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
+        backdrop_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
       }
       else {
-        drupal_set_message(t('You have been subscribed.'));
+        backdrop_set_message(t('You have been subscribed.'));
       }
       break;
     case 'unsubscribe':
       simplenews_unsubscribe_user($form_state['values']['mail'], $tid, $confirm, 'website');
       if ($confirm) {
-        drupal_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to cancel your subscription.'));
+        backdrop_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to cancel your subscription.'));
       }
       else {
-        drupal_set_message(t('You have been unsubscribed.'));
+        backdrop_set_message(t('You have been unsubscribed.'));
       }
       break;
   }
@@ -216,7 +216,7 @@ function simplenews_subscriptions_page_form($form, &$form_state, $code = NULL) {
   // If a hash is provided, try to load the corresponding subscriber.
   elseif ($code) {
     if (!$subscriber = simplenews_subscriber_load_by_hash($code)) {
-      drupal_not_found();
+      backdrop_not_found();
       return;
     }
     $mail = $subscriber->mail;
@@ -334,10 +334,10 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
         }
       }
       if (simplenews_confirmation_send_combined()) {
-        drupal_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
+        backdrop_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
       }
       else {
-        drupal_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
+        backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
       }
       break;
     case t('Subscribe'):
@@ -348,10 +348,10 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
         }
       }
       if (simplenews_confirmation_send_combined()) {
-        drupal_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
+        backdrop_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to complete your subscription.'));
       }
       else {
-        drupal_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
+        backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
       }
       break;
     case t('Unsubscribe'):
@@ -362,10 +362,10 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
         }
       }
       if (simplenews_confirmation_send_combined()) {
-        drupal_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to cancel your subscription.'));
+        backdrop_set_message(t('You will receive a confirmation e-mail shortly containing further instructions on how to cancel your subscription.'));
       }
       else {
-        drupal_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
+        backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
       }
       break;
   }
@@ -493,11 +493,11 @@ function simplenews_confirm_subscription() {
       'content' => 'noindex',
     ),
   );
-  drupal_add_html_head($noindex, 'simplenews-noindex');
+  backdrop_add_html_head($noindex, 'simplenews-noindex');
 
   if ($subscriber = simplenews_subscriber_load_by_hash($code)) {
     // Extract the category id.
-    list($snid, $tid) = explode('t', drupal_substr($code, 10));
+    list($snid, $tid) = explode('t', backdrop_substr($code, 10));
     if ($tid > 0) {
       $category = simplenews_category_load($tid);
     }
@@ -507,46 +507,46 @@ function simplenews_confirm_subscription() {
     // to the confirmation page.
     if (empty($arguments)) {
       if ($op == 'remove') {
-        return drupal_get_form('simplenews_confirm_removal_form', $subscriber->mail, $category);
+        return backdrop_get_form('simplenews_confirm_removal_form', $subscriber->mail, $category);
       }
       elseif ($op == 'add') {
-        return drupal_get_form('simplenews_confirm_add_form', $subscriber->mail, $category);
+        return backdrop_get_form('simplenews_confirm_add_form', $subscriber->mail, $category);
       }
       elseif ($op == 'combined') {
         // Redirect and display message if no changes are available.
         if (empty($subscriber->changes)) {
-          drupal_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
-          drupal_goto(variable_get('site_frontpage', 'node'));
+          backdrop_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
+          backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
         else {
-          return drupal_get_form('simplenews_confirm_multi_form', $subscriber);
+          return backdrop_get_form('simplenews_confirm_multi_form', $subscriber);
         }
       }
     }
     else {
       if ($op == 'remove') {
         simplenews_unsubscribe_user($subscriber->mail, $tid, FALSE, 'website');
-        if ($path = variable_get('simplenews_confirm_unsubscribe_page', '')) {
+        if ($path = config_get('simplenews.settings', 'simplenews_confirm_unsubscribe_page')) {
           $path = $path . '/' . implode('/', $arguments);
-          drupal_goto($path);
+          backdrop_goto($path);
         }
-        drupal_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
-        drupal_goto(variable_get('site_frontpage', 'node'));
+        backdrop_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
+        backdrop_goto(config_get('system.core', 'site_frontpage'));
       }
       elseif ($op == 'add') {
         simplenews_subscribe_user($subscriber->mail, $tid, FALSE, 'website');
-        if ($path = variable_get('simplenews_confirm_subscribe_page', '')) {
+        if ($path = config_get('simplenews.settings', 'simplenews_confirm_subscribe_page')) {
           $path = $path . '/' . implode('/', $arguments);
-          drupal_goto($path);
+          backdrop_goto($path);
         }
-        drupal_set_message(t('%user was added to the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
-        drupal_goto(variable_get('site_frontpage', 'node'));
+        backdrop_set_message(t('%user was added to the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
+        backdrop_goto(config_get('system.core', 'site_frontpage'));
       }
       elseif ($op == 'combined') {
         // Redirect and display message if no changes are available.
         if (empty($subscriber->changes)) {
-          drupal_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
-          drupal_goto(variable_get('site_frontpage', 'node'));
+          backdrop_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
+          backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
         else {
           foreach ($subscriber->changes as $tid => $action) {
@@ -562,15 +562,15 @@ function simplenews_confirm_subscription() {
           $subscriber->changes = array();
           simplenews_subscriber_save($subscriber);
 
-          drupal_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
-          drupal_goto(variable_get('site_frontpage', 'node'));
+          backdrop_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
+          backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
       }
     }
   }
 
   // If md5 didn't match, do a not found.
-  drupal_not_found();
+  backdrop_not_found();
   return;
 }
 
@@ -600,9 +600,9 @@ function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
 function simplenews_confirm_add_form_submit($form, &$form_state) {
   simplenews_subscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
 
-  if (!$path = variable_get('simplenews_confirm_subscribe_page', '')) {
-    $path = variable_get('site_frontpage', 'node');
-    drupal_set_message(t('%user was added to the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
+  if (!$path = config_get('simplenews.settings', 'simplenews_confirm_subscribe_page')) {
+    $path = config_get('system.core', 'site_frontpage');
+    backdrop_set_message(t('%user was added to the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
   }
 
   $form_state['redirect'] = $path;
@@ -648,8 +648,8 @@ function simplenews_confirm_multi_form_submit($form, &$form_state) {
   $subscriber->changes = array();
   simplenews_subscriber_save($subscriber);
 
-  drupal_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
-  $form_state['redirect'] = variable_get('site_frontpage', 'node');
+  backdrop_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
+  $form_state['redirect'] = config_get('system.core', 'site_frontpage');
 }
 
 /**
@@ -699,9 +699,9 @@ function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter
 function simplenews_confirm_removal_form_submit($form, &$form_state) {
   simplenews_unsubscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
 
-  if (!$path = variable_get('simplenews_confirm_unsubscribe_page', '')) {
-    $path = variable_get('site_frontpage', 'node');
-    drupal_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
+  if (!$path = config_get('simplenews.settings', 'simplenews_confirm_unsubscribe_page')) {
+    $path = config_get('system.core', 'site_frontpage');
+    backdrop_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
   }
 
   $form_state['redirect'] = $path;
@@ -752,7 +752,7 @@ function simplenews_subscriptions_admin_form($form, &$form_state, $snid) {
     '#default_value' => $subscriber->activated,
   );
 
-  if ((variable_get('language_count', 1) > 1)) {
+  if ((config_get('system.core', 'language_count') > 1)) {
     $languages = language_list('enabled');
     foreach ($languages[1] as $langcode => $item) {
       $name = t($item->name);
@@ -844,6 +844,6 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   }
   simplenews_subscriber_save($subscriber);
 
-  drupal_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
+  backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
 }
 

@@ -19,7 +19,7 @@ class simplenews_handler_field_newsletter_send extends views_handler_field_node_
       return;
     }
     $this->options['alter']['make_link'] = TRUE;
-    $this->options['alter']['query'] = drupal_get_destination();
+    $this->options['alter']['query'] = backdrop_get_destination();
     if ($node->simplenews->status == SIMPLENEWS_STATUS_SEND_NOT) {
       $this->options['alter']['path'] = "node/$node->nid/simplenews";
       $text = !empty($this->options['text']) ? $this->options['text'] : t('Send newsletter');

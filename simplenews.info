@@ -1,7 +1,8 @@
 name = Simplenews
 description = Send newsletters to subscribed email addresses.
 package = Mail
-core = 7.x
+version = BACKDROP_VERSION
+backdrop = 1.x
 configure = admin/config/services/simplenews
 dependencies[] = taxonomy
 

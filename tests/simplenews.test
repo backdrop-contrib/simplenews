@@ -24,7 +24,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
     //$this->simplenews_admin_user = $this->drupalCreateUser(array('administer newsletters', 'administer simplenews settings', 'administer simplenews subscriptions'));
     //$this->sender_user = $this->drupalCreateUser(array('create simplenews content', 'edit own simplenews content', 'send newsletter'));
 
-    variable_set('site_mail', 'user@example.com');
+    config_set('simplenews.settings', 'site_mail', 'user@example.com');
     $this->mailadress_cache = array();
   }
 
@@ -38,7 +38,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
 
     if ($enabled) {
       db_insert('role_permission')
-        ->fields(array('rid', 'permission'), array(DRUPAL_ANONYMOUS_RID, 'subscribe to newsletters'))
+        ->fields(array('rid', 'permission'), array(BACKDROP_ANONYMOUS_RID, 'subscribe to newsletters'))
         ->execute();
     }
   }
@@ -53,7 +53,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
 
     if ($enabled) {
       db_insert('role_permission')
-        ->fields(array('rid', 'permission'), array(DRUPAL_AUTHENTICATED_RID, 'subscribe to newsletters'))
+        ->fields(array('rid', 'permission'), array(BACKDROP_AUTHENTICATED_RID, 'subscribe to newsletters'))
         ->execute();
     }
   }
@@ -361,7 +361,7 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
     $this->assertTrue($found, t('Single add confirmation URL found: @url', array('@url' => $confirm_url)));
 
     // Change behavior to always use combined mails.
-    variable_set('simplenews_use_combined', 'always');
+    config_set('simplenews.settings', 'simplenews_use_combined', 'always');
     $edit = array(
       'mail' => $mail,
       'newsletters[' . $tid . ']' => TRUE,
@@ -376,7 +376,7 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
     $this->assertTrue($found, t('Multi confirmation URL found: @url', array('@url' => $confirm_url)));
 
     // Change behavior to never, should send two separate mails.
-    variable_set('simplenews_use_combined', 'never');
+    config_set('simplenews.settings', 'simplenews_use_combined', 'never');
     $edit = array(
       'mail' => $mail,
     );
@@ -506,8 +506,8 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
 
     // Test that it is possible to register with a mail address that is already
     // a subscriber.
-    variable_set('user_register', 1);
-    variable_set('user_email_verification', FALSE);
+    config_set('simplenews.settings', 'user_register', 1);
+    config_set('simplenews.settings', 'user_email_verification', FALSE);
 
     $edit = array(
       'name' => $this->randomName(),
@@ -1009,8 +1009,8 @@ class SimpleNewsAdministrationTestCase extends SimplenewsTestCase {
   function testCategorySettings() {
 
     // Allow registration of new accounts without approval.
-    variable_set('user_register', 1);
-    variable_set('user_email_verification', FALSE);
+    config_set('simplenews.settings', 'user_register', 1);
+    config_set('simplenews.settings', 'user_email_verification', FALSE);
 
     // Allow authenticated users to subscribe.
     $this->setAuthenticatedUserSubscription(TRUE);
@@ -1871,7 +1871,7 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
     parent::setUp();
 
     // Use the test mail class instead of the default mail handler class.
-    $this->variable_set('mail_system', array('default-system' => 'TestingMailSystem'));
+    $this->config_set('simplenews.settings', 'mail_system', array('default-system' => 'TestingMailSystem'));
   }
 
   public function prepareUpgradePath() {
@@ -1921,7 +1921,7 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
     $this->assertText('Drupal 6 newsletter');
 
     // Check category field
-    $this->assertEqual(variable_get('simplenews_category_field'), 'taxonomy_vocabulary_1');
+    $this->assertEqual(config_get('simplenews.settings', 'simplenews_category_field'));
     $this->assertTrue(field_info_instance('node', 'taxonomy_vocabulary_1', 'simplenews'));
 
     // Create an issue.
@@ -2011,7 +2011,7 @@ class SimpleNewsUpgradePath62TestCase extends SimpleNewsUpgradePathTestCase {
     parent::setUp();
 
     // Use the test mail class instead of the default mail handler class.
-    $this->variable_set('mail_system', array('default-system' => 'TestingMailSystem'));
+    $this->config_set('simplenews.settings', 'mail_system', array('default-system' => 'TestingMailSystem'));
   }
 
   /**
@@ -2120,7 +2120,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendNowNoCron() {
     // Disable cron.
-    variable_set('simplenews_use_cron', FALSE);
+    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2168,7 +2168,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendMultipleNoCron() {
     // Disable cron.
-    variable_set('simplenews_use_cron', FALSE);
+    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $nodes = array();
@@ -2227,7 +2227,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendNowCronThrottle() {
 
-    variable_set('simplenews_throttle', 3);
+    config_set('simplenews.settings', 'simplenews_throttle', 3);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2373,7 +2373,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendPublishNoCron() {
     // Disable cron.
-    variable_set('simplenews_use_cron', FALSE);
+    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2474,7 +2474,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $this->assertText(t('Newsletter category'));
 
     // Prevent deleting the mail spool entries automatically.
-    variable_set('simplenews_spool_expire', 1);
+    config_set('simplenews.settings', 'simplenews_spool_expire', 1);
 
     $edit = array(
       'title' => $this->randomName(),
@@ -2725,7 +2725,7 @@ class SimplenewsSourceTestCase extends SimplenewsTestCase {
     $this->setUpSubscribers(5);
 
     // Use custom testing mail system to support HTML mails.
-    variable_set('mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
+    config_set('simplenews.settings', 'mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
 
     // Set the format to HTML.
     $this->drupalGet('admin/config/services/simplenews');

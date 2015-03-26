@@ -1,0 +1,32 @@
+{
+    "_config_name": "simplenews.settings",
+    "simplenews_vid": "",
+    "simplenews_category_field": "field_simplenews_term",
+    "simplenews_use_combined": "never",
+    "simplenews_block_m_multiple": "Select the newsletter(s) to which you want to subscribe or unsubscribe.",
+    "simplenews_private_key": "FALSE",
+
+    "simplenews_last_cron": "0",
+    "simplenews_last_sent": "0",
+    "simplenews_use_cron": "FALSE",
+    "simplenews_throttle": "20",
+    "simplenews_spool_progress_expiration": "3600",
+
+    "simplenews_spool_expire": "0",
+    "simplenews_content_types": "",
+    "simplenews_sync_account": "TRUE",
+    "simplenews_debug": "FALSE",
+    "simplenews_format": "plain",
+
+    "simplenews_priority": "SIMPLENEWS_PRIORITY_NONE",
+    "simplenews_receipt": "0",
+    "simplenews_from_name": "",
+    "simplenews_send": "0",
+    "simplenews_test_address": "",
+
+    "simplenews_test_address_override": "0",
+    "simplenews_from_address": "",
+    "simplenews_source_cache": "SimplenewsSourceCacheBuild",
+    "simplenews_confirm_subscribe_page": "",
+    "simplenews_confirm_unsubscribe_page": ""
+}

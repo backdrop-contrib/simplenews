@@ -136,9 +136,9 @@ function simplenews_admin_issues() {
     '#validate' => array('simplenews_admin_issues_validate'),
   );
 
-  if (variable_get('simplenews_last_cron', '')) {
+  if (config_get('simplenews.settings', 'simplenews_last_cron')) {
     $form['last_sent'] = array(
-      '#markup' => '<p>' . format_plural(variable_get('simplenews_last_sent', 0), 'Last batch: 1 mail sent at !time.', 'Last batch: !count mails sent at !time.', array('!time' => format_date(variable_get('simplenews_last_cron', ''), 'small'), '!count' => variable_get('simplenews_last_sent', 0))) . "</p>\n",
+      '#markup' => '<p>' . format_plural(config_get('simplenews.settings', 'simplenews_last_sent'), 'Last batch: 1 mail sent at !time.', 'Last batch: !count mails sent at !time.', array('!time' => format_date(config_get('simplenews.settings', 'simplenews_last_cron'), 'small'), '!count' => config_get('simplenews.settings', 'simplenews_last_sent'))) . "</p>\n",
     );
   }
   // Table header. Used as tablesort default
@@ -166,7 +166,7 @@ function simplenews_admin_issues() {
   $query->addField('sn', 'status', 'sent_status');
 
   $options = array();
-  $destination = drupal_get_destination();
+  $destination = backdrop_get_destination();
 
   module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
   foreach ($query->execute() as $issue) {
@@ -182,7 +182,7 @@ function simplenews_admin_issues() {
       'published' => theme('simplenews_status', array('source' => 'published', 'status' => $issue->status)),
       'sent' => $send_status,
       'subscribers' => $subscriber_count,
-      'operations' => l(t('edit'), 'node/' . $issue->nid . '/edit', array('query' => drupal_get_destination())),
+      'operations' => l(t('edit'), 'node/' . $issue->nid . '/edit', array('query' => backdrop_get_destination())),
     );
   }
 
@@ -263,7 +263,7 @@ function simplenews_issue_send($nids) {
 
     if ($node->status == NODE_NOT_PUBLISHED) {
       simplenews_newsletter_update_sent_status($node, SIMPLENEWS_COMMAND_SEND_PUBLISH);
-      drupal_set_message(t('Newsletter %title is unpublished and will be sent on publish.', array('%title' => $node->title)));
+      backdrop_set_message(t('Newsletter %title is unpublished and will be sent on publish.', array('%title' => $node->title)));
       continue;
     }
 
@@ -276,10 +276,10 @@ function simplenews_issue_send($nids) {
     $conditions = array('nid' => array_keys($sent_nodes));
     // Attempt to send immediatly, if configured to do so.
     if (simplenews_mail_attempt_immediate_send($conditions)) {
-      drupal_set_message(t('Sent the following newsletters: %titles.', array('%titles' => implode(', ', $sent_nodes))));
+      backdrop_set_message(t('Sent the following newsletters: %titles.', array('%titles' => implode(', ', $sent_nodes))));
     }
     else {
-      drupal_set_message(t('The following newsletter are now pending: %titles.', array('%titles' => implode(', ', $sent_nodes))));
+      backdrop_set_message(t('The following newsletter are now pending: %titles.', array('%titles' => implode(', ', $sent_nodes))));
     }
   }
 }
@@ -349,7 +349,7 @@ function simplenews_admin_categories_submit($form, &$form_state) {
       simplenews_category_save($form[$tid]['#category']);
     }
   }
-  drupal_set_message(t('Your configuration has been saved.'));
+  backdrop_set_message(t('Your configuration has been saved.'));
 }
 
 /**
@@ -367,12 +367,12 @@ function theme_simplenews_admin_categories($variables) {
       $category = &$form[$key];
 
       $row = array();
-      $row[] = drupal_render($category['name']);
+      $row[] = backdrop_render($category['name']);
       if (isset($category['weight'])) {
         $category['weight']['#attributes']['class'] = array('simplenews-category-weight');
-        $row[] = drupal_render($category['weight']);
+        $row[] = backdrop_render($category['weight']);
       }
-      $row[] = drupal_render($category['edit']);
+      $row[] = backdrop_render($category['edit']);
       $rows[] = array('data' => $row, 'class' => array('draggable'));
     }
   }
@@ -380,10 +380,10 @@ function theme_simplenews_admin_categories($variables) {
   $header = array(t('Newsletter category name'));
   if (isset($form['submit'])) {
     $header[] = t('Weight');
-    drupal_add_tabledrag('newsletter-category', 'order', 'self', 'simplenews-category-weight');
+    backdrop_add_tabledrag('newsletter-category', 'order', 'self', 'simplenews-category-weight');
   }
   $header[] = array('data' => t('Operations'), 'colspan' => '3');
-  return theme('table', array('header' => $header, 'rows' => $rows, 'empty' => t('No newsletter categories. <a href="@link">Add category</a>.', array('@link' => url('admin/config/services/simplenews/add'))), 'attributes' => array('id' => 'newsletter-category'))) . drupal_render_children($form);
+  return theme('table', array('header' => $header, 'rows' => $rows, 'empty' => t('No newsletter categories. <a href="@link">Add category</a>.', array('@link' => url('admin/config/services/simplenews/add'))), 'attributes' => array('id' => 'newsletter-category'))) . backdrop_render_children($form);
 }
 
 /**
@@ -404,12 +404,12 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'new_account' => 'none',
     'opt_inout' => 'double',
     'block' => 1,
-    'format' => variable_get('simplenews_format', 'plain'),
-    'priority' => variable_get('simplenews_priority', SIMPLENEWS_PRIORITY_NONE),
-    'receipt' => variable_get('simplenews_receipt', 0),
-    'from_name' => variable_get('simplenews_from_name', variable_get('site_name', 'Drupal')),
+    'format' => config_get('simplenews.settings', 'simplenews_format'),
+    'priority' => config_get('simplenews.settings', 'simplenews_priority'),
+    'receipt' => config_get('simplenews.settings', 'simplenews_receipt'),
+    'from_name' => config_get('simplenews.settings', 'simplenews_from_name'),
     'email_subject' => '[[simplenews-category:name]] [node:title]',
-    'from_address' => variable_get('simplenews_from_address', variable_get('site_mail', ini_get('sendmail_from'))),
+    'from_address' => config_get('simplenews.settings', 'simplenews_from_address'),
     'hyperlinks' => 1,
   );
 
@@ -643,12 +643,12 @@ function simplenews_admin_category_form_submit($form, &$form_state) {
 
   switch (simplenews_category_save($category)) {
     case SAVED_NEW:
-      drupal_set_message(t('Created new newsletter category %name.', array('%name' => _simplenews_newsletter_name($category))));
+      backdrop_set_message(t('Created new newsletter category %name.', array('%name' => _simplenews_newsletter_name($category))));
       watchdog('simplenews', 'Created new newsletter category %name.', array('%name' => _simplenews_newsletter_name($category), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/services/simplenews/categories/' . $category->tid . '/edit')));
       break;
 
     case SAVED_UPDATED:
-      drupal_set_message(t('Updated newsletter category %name.', array('%name' => _simplenews_newsletter_name($category))));
+      backdrop_set_message(t('Updated newsletter category %name.', array('%name' => _simplenews_newsletter_name($category))));
       watchdog('simplenews', 'Updated newsletter category %name.', array('%name' => _simplenews_newsletter_name($category)), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/services/simplenews/categories/' . $category->tid . '/edit'));
       break;
   }
@@ -688,7 +688,7 @@ function simplenews_admin_category_delete_submit($form, &$form_state) {
   // Subscriptions are deleted by simplenews_simplenews_category_delete()
   simplenews_category_delete($tid);
   taxonomy_term_delete($tid);
-  drupal_set_message(t('Newsletter category %name has been deleted.', array('%name' => $name)));
+  backdrop_set_message(t('Newsletter category %name has been deleted.', array('%name' => $name)));
 
   $form_state['redirect'] = 'admin/config/services/simplenews';
   return;
@@ -735,7 +735,7 @@ function simplenews_subscription_list_add($form, &$form_state) {
   // Include language selection when the site is multilingual.
   // Default value is the empty string which will result in receiving emails
   // in the site's default language.
-  if (variable_get('language_count', 1) > 1) {
+  if (config_get('simplenews.settings', 'language_count') > 1) {
     $options[''] = t('Site default language');
     $languages = language_list('enabled');
     foreach ($languages[1] as $langcode => $item) {
@@ -804,29 +804,29 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
   }
   if ($added) {
     $added = implode(", ", $added);
-    drupal_set_message(t('The following addresses were added or updated: %added.', array('%added' => $added)));
+    backdrop_set_message(t('The following addresses were added or updated: %added.', array('%added' => $added)));
 
     $list_names = array();
     foreach (simplenews_categories_load_multiple($checked_categories) as $category) {
       $list_names[] = $category->name;
     }
-    drupal_set_message(t('The addresses were subscribed to the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
+    backdrop_set_message(t('The addresses were subscribed to the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
-    drupal_set_message(t('No addresses were added.'));
+    backdrop_set_message(t('No addresses were added.'));
   }
   if ($invalid) {
     $invalid = implode(", ", $invalid);
-    drupal_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
+    backdrop_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
   }
 
   foreach ($unsubscribed as $name => $subscribers) {
     $subscribers = implode(", ", $subscribers);
-    drupal_set_message(t('The following addresses were skipped because they have previously unsubscribed from %name: %unsubscribed.', array('%name' => $name, '%unsubscribed' => $subscribers)), 'warning');
+    backdrop_set_message(t('The following addresses were skipped because they have previously unsubscribed from %name: %unsubscribed.', array('%name' => $name, '%unsubscribed' => $subscribers)), 'warning');
   }
 
   if (!empty($unsubscribed)) {
-    drupal_set_message(t("If you would like to resubscribe them, use the 'Force resubscription' option."), 'warning');
+    backdrop_set_message(t("If you would like to resubscribe them, use the 'Force resubscription' option."), 'warning');
   }
 
   // Return to the parent page.
@@ -1019,21 +1019,21 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
   }
   if ($removed) {
     $removed = implode(", ", $removed);
-    drupal_set_message(t('The following addresses were unsubscribed: %removed.', array('%removed' => $removed)));
+    backdrop_set_message(t('The following addresses were unsubscribed: %removed.', array('%removed' => $removed)));
 
     $lists = simplenews_categories_load_multiple();
     $list_names = array();
     foreach ($checked_lists as $tid) {
       $list_names[] = _simplenews_newsletter_name($lists[$tid]);
     }
-    drupal_set_message(t('The addresses were unsubscribed from the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
+    backdrop_set_message(t('The addresses were unsubscribed from the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
-    drupal_set_message(t('No addresses were removed.'));
+    backdrop_set_message(t('No addresses were removed.'));
   }
   if ($invalid) {
     $invalid = implode(", ", $invalid);
-    drupal_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
+    backdrop_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
   }
 
   // Return to the parent page.
@@ -1108,7 +1108,7 @@ function simplenews_subscription_list_form() {
     ->execute();
 
   $options = array();
-  $destination = drupal_get_destination();
+  $destination = backdrop_get_destination();
 
   foreach ($result as $subscriber) {
     $options[$subscriber->snid] = array(
@@ -1190,7 +1190,7 @@ function simplenews_subscription_list_form_submit($form, &$form_state) {
     }
     call_user_func_array($function, $args);
 
-    drupal_set_message(t('The update has been performed.'));
+    backdrop_set_message(t('The update has been performed.'));
   }
   else {
     // We need to rebuild the form to go to a second step. For example, to
@@ -1235,7 +1235,7 @@ function simplenews_subscription_delete_multiple($snids = array()) {
  * Menu callback: Simplenews admin settings - Newsletter.
  */
 function simplenews_admin_settings_newsletter($form, &$form_state) {
-  $address_default = variable_get('site_mail', ini_get('sendmail_from'));
+  $address_default = config_get('system.core', 'site_mail');
   $form = array();
 
   $form['simplenews_default_options'] = array(
@@ -1251,7 +1251,7 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#title' => t('Format'),
     '#options' => simplenews_format_options(),
     '#description' => $description,
-    '#default_value' => variable_get('simplenews_format', 'plain'),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_format'),
   );
   // @todo Do we need these master defaults for 'priority' and 'receipt'?
   $form['simplenews_default_options']['simplenews_priority'] = array(
@@ -1259,12 +1259,12 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#title' => t('Priority'),
     '#options' => simplenews_get_priority(),
     '#description' => t('Note that email priority is ignored by a lot of email programs.'),
-    '#default_value' => variable_get('simplenews_priority', SIMPLENEWS_PRIORITY_NONE),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_priority'),
   );
   $form['simplenews_default_options']['simplenews_receipt'] = array(
     '#type' => 'checkbox',
     '#title' => t('Request receipt'),
-    '#default_value' => variable_get('simplenews_receipt', 0),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_receipt'),
     '#description' => t('Request a Read Receipt from your newsletters. A lot of email programs ignore these so it is not a definitive indication of how many people have read your newsletter.'),
   );
   $form['simplenews_default_options']['simplenews_send'] = array(
@@ -1274,7 +1274,7 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
       SIMPLENEWS_COMMAND_SEND_TEST => t('Send one test newsletter to the test address'),
       SIMPLENEWS_COMMAND_SEND_NOW => t('Send newsletter'),
     ),
-    '#default_value' => variable_get('simplenews_send', 0),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_send'),
   );
   $form['simplenews_test_address'] = array(
     '#type' => 'fieldset',
@@ -1287,12 +1287,12 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#title' => t('Email address'),
     '#size' => 60,
     '#maxlength' => 128,
-    '#default_value' => variable_get('simplenews_test_address', $address_default),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_test_address'),
   );
   $form['simplenews_test_address']['simplenews_test_address_override'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow test address override'),
-    '#default_value' => variable_get('simplenews_test_address_override', 0),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_test_address_override'),
   );
   $form['simplenews_sender_info'] = array(
     '#type' => 'fieldset',
@@ -1305,7 +1305,7 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#title' => t('From name'),
     '#size' => 60,
     '#maxlength' => 128,
-    '#default_value' => variable_get('simplenews_from_name', variable_get('site_name', 'Drupal')),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_from_name'),
   );
   $form['simplenews_sender_info']['simplenews_from_address'] = array(
     '#type' => 'textfield',
@@ -1313,11 +1313,36 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#size' => 60,
     '#maxlength' => 128,
     '#required' => TRUE,
-    '#default_value' => variable_get('simplenews_from_address', $address_default),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_from_address'),
   );
 
-  return system_settings_form($form);
+  $form['#submit'][] = 'simplenews_admin_settings_newsletter_submit';
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  // Return the form!
+  return $form;
 }
+
+
+
+/**
+ * Form submission handler for simplenews_admin_settings_newsletter_submit().
+ */
+function mimemail_admin_settings_submit($form, &$form_state) {
+$config = config('simplenews.settings');
+foreach ($form_state['values'] as $key => $value)
+{
+$config->set($key, $value);
+}
+
+$config->save();
+backdrop_set_message(t('The configuration options have been saved.'));
+}
+
 
 /**
  * @todo
@@ -1332,13 +1357,13 @@ function simplenews_admin_settings_newsletter_validate($form, &$form_state) {
  * Menu callback: Simplenews admin settings - Email.
  */
 function simplenews_admin_settings_mail($form, &$form_state) {
-  $address_default = variable_get('site_mail', ini_get('sendmail_from'));
+  $address_default = config_get('system.core', 'site_mail');
   $form = array();
 
   $form['simplenews_mail_backend']['simplenews_use_cron'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use cron to send newsletters'),
-    '#default_value' => variable_get('simplenews_use_cron', TRUE),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_use_cron'),
     '#description' => t('When checked cron will be used to send newsletters (recommended). Test newsletters and confirmation emails will be sent immediately. Leave unchecked for testing purposes.'),
   );
 
@@ -1355,10 +1380,10 @@ function simplenews_admin_settings_mail($form, &$form_state) {
     '#title' => t('Cache'),
     '#description' => t('Chosing a different cache implementation allows for a different behavior during sending mails.') . '<br /><br />' . $sources_descriptions,
     '#options' => $sources_labels,
-    '#default_value' => variable_get('simplenews_source_cache', 'SimplenewsSourceCacheBuild'),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_source_cache'),
   );
 
-  $throttle = drupal_map_assoc(array(1, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000));
+  $throttle = backdrop_map_assoc(array(1, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000));
   $throttle[SIMPLENEWS_UNLIMITED] = t('Unlimited');
   if (function_exists('getrusage')) {
     $description_extra = '<br />' . t('Cron execution must not exceed the PHP maximum execution time of %max seconds. You find the time spend to send emails in the <a href="/admin/reports/dblog">Recent log entries</a>.', array('%max' => ini_get('max_execution_time')));
@@ -1370,7 +1395,7 @@ function simplenews_admin_settings_mail($form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Cron throttle'),
     '#options' => $throttle,
-    '#default_value' => variable_get('simplenews_throttle', 20),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_throttle'),
     '#description' => t('Sets the numbers of newsletters sent per cron run. Failure to send will also be counted.') . $description_extra,
   );
   $form['simplenews_mail_backend']['simplenews_spool_expire'] = array(
@@ -1382,23 +1407,48 @@ function simplenews_admin_settings_mail($form, &$form_state) {
       7 => format_plural(1, '1 week', '@count weeks'),
       14 => format_plural(2, '1 week', '@count weeks'),
     ),
-    '#default_value' => variable_get('simplenews_spool_expire', 0),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_spool_expire'),
     '#description' => t('Newsletter mails are spooled. How long must messages be retained in the spool after successful sending. Keeping the message in the spool allows mail statistics (which is not yet implemented). If cron is not used, immediate expiration is advised.'),
   );
   $form['simplenews_mail_backend']['simplenews_debug'] = array(
     '#type' => 'checkbox',
     '#title' => t('Log emails'),
-    '#default_value' => variable_get('simplenews_debug', FALSE),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_debug'),
     '#description' => t('When checked all outgoing simplenews emails are logged in the system log. A logged email does not guarantee that it is send or will be delivered. It only indicates that a message is sent to the PHP mail() function. No status information is available of delivery by the PHP mail() function.'),
   );
-  return system_settings_form($form);
+  $form['#submit'][] = 'simplenews_admin_settings_mail_submit';
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  // Return the form!
+  return $form;
 }
+
+
+/**
+ * Form submission handler for simplenews_admin_settings_subscription_submits().
+ */
+function simplenews_admin_settings_mail_submit($form, &$form_state) {
+$config = config('simplenews.settings');
+foreach ($form_state['values'] as $key => $value)
+{
+$config->set($key, $value);
+}
+
+$config->save();
+backdrop_set_message(t('The configuration options have been saved.'));
+}
+
+
 
 /**
  * Menu callback: Simplenews admin settings - Subscription.
  */
 function simplenews_admin_settings_subscription($form, &$form_state) {
-  $address_default = variable_get('site_mail', ini_get('sendmail_from'));
+  $address_default = config_get('system.core', 'site_mail');
   $form = array();
 
   $form['account'] = array(
@@ -1409,7 +1459,7 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
   $form['account']['simplenews_sync_account'] = array(
     '#type' => 'checkbox',
     '#title' => t('Synchronize with account'),
-    '#default_value' => variable_get('simplenews_sync_account', TRUE),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_sync_account'),
     '#description' => t('When checked subscriptions will be synchronized with site accounts. When accounts are deleted, subscriptions with the same email address will be removed. When site accounts are blocked/unblocked, subscriptions will be deactivated/activated. When not checked subscriptions will be unchanged when associated accounts are deleted or blocked.'),
   );
 
@@ -1428,7 +1478,7 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
       'never' => t('Never'),
     ),
     '#description' => t('Combined confirmation mails allow subscribers to confirm multiple newsletter changes with single mail.'),
-    '#default_value' => variable_get('simplenews_use_combined', 'multiple'),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_use_combined'),
   );
 
   if (module_exists('token')) {
@@ -1557,18 +1607,44 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
   $form['confirm_pages']['simplenews_confirm_subscribe_page'] = array(
     '#type' => 'textfield',
     '#title' => t('Subscribe confirmation'),
-    '#description' => t('Drupal path or URL of the destination page where after the subscription is confirmed (e.g. node/123). Leave empty to go to the front page.'),
-    '#default_value' => variable_get('simplenews_confirm_subscribe_page', ''),
+    '#description' => t('Backdrop path or URL of the destination page where after the subscription is confirmed (e.g. node/123). Leave empty to go to the front page.'),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_confirm_subscribe_page'),
   );
   $form['confirm_pages']['simplenews_confirm_unsubscribe_page'] = array(
     '#type' => 'textfield',
     '#title' => t('Unsubscribe confirmation'),
-    '#description' => t('Drupal path or URL of the destination page when the subscription removal is confirmed (e.g. node/123). Leave empty to go to the front page.'),
-    '#default_value' => variable_get('simplenews_confirm_unsubscribe_page', ''),
+    '#description' => t('Backdrop path or URL of the destination page when the subscription removal is confirmed (e.g. node/123). Leave empty to go to the front page.'),
+    '#default_value' => config_get('simplenews.settings', 'simplenews_confirm_unsubscribe_page'),
   );
 
-  return system_settings_form($form);
+  $form['#submit'][] = 'simplenews_admin_settings_subscription_submit';
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  // Return the form!
+  return $form;
 }
+
+
+
+/**
+ * Form submission handler for simplenews_admin_settings_subscription_submits().
+ */
+function simplenews_admin_settings_subscription_submit($form, &$form_state) {
+$config = config('simplenews.settings');
+foreach ($form_state['values'] as $key => $value)
+{
+$config->set($key, $value);
+}
+
+$config->save();
+backdrop_set_message(t('The configuration options have been saved.'));
+}
+
+
 
 /**
  * Generate subscription filters
@@ -1698,7 +1774,7 @@ function simplenews_build_subscription_filter_query(SelectQueryInterface $query)
  * @return number of subscribers.
  */
 function simplenews_count_subscriptions($tid) {
-  $subscription_count = &drupal_static(__FUNCTION__);
+  $subscription_count = &backdrop_static(__FUNCTION__);
 
   if (isset($subscription_count[$tid])) {
     return $subscription_count[$tid];
@@ -1765,7 +1841,7 @@ function theme_simplenews_status($variables) {
   // Build the output
   if (isset($images[$status])) {
     $img_vars = array(
-      'path' => drupal_get_path('module', 'simplenews') . '/' . $images[$status],
+      'path' => backdrop_get_path('module', 'simplenews') . '/' . $images[$status],
       'alt' => $title[$status],
       'title' => $title[$status],
       'getsize' => TRUE,
@@ -1787,9 +1863,9 @@ function theme_simplenews_filter_form($variables) {
   $form = $variables['form'];
 
   $output = '<div id="simplenews-admin-filter">';
-  $output .= drupal_render($form['filters']);
+  $output .= backdrop_render($form['filters']);
   $output .= '</div>';
-  $output .= drupal_render_children($form);
+  $output .= backdrop_render_children($form);
   return $output;
 }
 
@@ -1802,9 +1878,9 @@ function theme_simplenews_subscription_filter_form($variables) {
   $form = $variables['form'];
 
   $output = '<div id="simplenews-subscription-filter">';
-  $output .= drupal_render($form['filters']);
+  $output .= backdrop_render($form['filters']);
   $output .= '</div>';
-  $output .= drupal_render_children($form);
+  $output .= backdrop_render_children($form);
   return $output;
 }
 
@@ -1826,8 +1902,8 @@ function simplenews_get_priority() {
  * Menu callback; Newsletter tab page.
  */
 function simplenews_node_tab_page($node) {
-  drupal_set_title(t('<em>Newsletter</em> @title', array('@title' => $node->title)), PASS_THROUGH);
-  return drupal_get_form('simplenews_node_tab_send_form', $node);
+  backdrop_set_title(t('<em>Newsletter</em> @title', array('@title' => $node->title)), PASS_THROUGH);
+  return backdrop_get_form('simplenews_node_tab_send_form', $node);
 }
 
 /**
@@ -1892,7 +1968,7 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
         $send_default = SIMPLENEWS_STATUS_SEND_PUBLISH;
       }
       else {
-        $send_default = variable_get('simplenews_send', SIMPLENEWS_COMMAND_SEND_TEST);
+        $send_default = config_get('simplenews.settings', 'simplenews_send');
       }
       $form['simplenews']['send'] = array(
         '#type' => 'radios',
@@ -1904,13 +1980,13 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
         ),
       );
 
-      $address_default = variable_get('site_mail', ini_get('sendmail_from'));
-      if (variable_get('simplenews_test_address_override', 0)) {
+      $address_default = config_get('system.core', 'site_mail');
+      if (config_get('simplenews.settings', 'simplenews_test_address_override')) {
         $form['simplenews']['test_address'] = array(
           '#type' => 'textfield',
           '#title' => t('Test email addresses'),
           '#description' => t('A comma-separated list of email addresses to be used as test addresses.'),
-          '#default_value' => variable_get('simplenews_test_address', $address_default),
+          '#default_value' => config_get('simplenews.settings', 'simplenews_test_address'),
           '#size' => 60,
           '#maxlength' => 128,
         );
@@ -1918,7 +1994,7 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
       else {
         $form['simplenews']['test_address'] = array(
           '#type' => 'value',
-          '#value' => variable_get('simplenews_test_address', $address_default),
+          '#value' => config_get('simplenews.settings', 'simplenews_test_address'),
         );
       }
     }
@@ -1949,9 +2025,9 @@ function simplenews_node_tab_send_form_validate($form, &$form_state) {
   $values = $form_state['values'];
   $node = node_load($values['nid']);
 
-  $default_address = variable_get('simplenews_test_address', variable_get('site_mail', ini_get('sendmail_from')));
+  $default_address = config_get('simplenews.settings', 'simplenews_test_address');
   $mails = array($default_address);
-  if (isset($values['simplenews']['send']) && $values['simplenews']['send'] == SIMPLENEWS_COMMAND_SEND_TEST && variable_get('simplenews_test_address_override', 0)) {
+  if (isset($values['simplenews']['send']) && $values['simplenews']['send'] == SIMPLENEWS_COMMAND_SEND_TEST && config_get('simplenews.settings', 'simplenews_test_address_override')) {
     // @todo Can we simplify and use only two kind of messages?
     if (!empty($values['simplenews']['test_address'])) {
       $mails = explode(',', $values['simplenews']['test_address']);
@@ -1985,10 +2061,10 @@ function simplenews_node_tab_send_form_submit($form, &$form_state) {
     simplenews_add_node_to_spool($node);
     // Attempt to send immediatly, if configured to do so.
     if (simplenews_mail_attempt_immediate_send(array('nid' => $node->nid))) {
-      drupal_set_message(t('Newsletter %title sent.', array('%title' => $node->title)));
+      backdrop_set_message(t('Newsletter %title sent.', array('%title' => $node->title)));
     }
     else {
-      drupal_set_message(t('Newsletter %title pending.', array('%title' => $node->title)));
+      backdrop_set_message(t('Newsletter %title pending.', array('%title' => $node->title)));
     }
   }
   elseif ($values['simplenews']['send'] == SIMPLENEWS_COMMAND_SEND_TEST) {
@@ -2003,6 +2079,6 @@ function simplenews_node_tab_send_form_submit($form, &$form_state) {
     }
     $newsletter->status = SIMPLENEWS_STATUS_SEND_PUBLISH;
     simplenews_newsletter_save($newsletter);
-    drupal_set_message(t('The newsletter will be sent when the content is published.'));
+    backdrop_set_message(t('The newsletter will be sent when the content is published.'));
   }
 }

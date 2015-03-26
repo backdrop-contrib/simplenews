@@ -49,13 +49,13 @@ function simplenews_add_node_to_spool($node) {
  *   (Optional) Array of spool conditions which are applied to the query.
  */
 function simplenews_mail_attempt_immediate_send(array $conditions = array(), $use_batch = TRUE) {
-  if (variable_get('simplenews_use_cron', TRUE)) {
+  if (config_get('simplenews.settings', 'simplenews_use_cron')) {
     return FALSE;
   }
   if ($use_batch) {
     // Set up as many send operations as necessary to send all mails with the
     // defined throttle amount.
-    $throttle = variable_get('simplenews_throttle', 20);
+    $throttle = config_get('simplenews.settings', 'simplenews_throttle');
     $spool_count = simplenews_count_spool($conditions);
     $num_operations = ceil($spool_count / $throttle);
 
@@ -71,7 +71,7 @@ function simplenews_mail_attempt_immediate_send(array $conditions = array(), $us
     $batch = array(
       'operations' => $operations,
       'title' => t('Sending mails'),
-      'file' => drupal_get_path('module', 'simplenews') . '/includes/simplenews.mail.inc',
+      'file' => backdrop_get_path('module', 'simplenews') . '/includes/simplenews.mail.inc',
     );
     batch_set($batch);
   }
@@ -94,13 +94,13 @@ function simplenews_mail_attempt_immediate_send(array $conditions = array(), $us
  */
 function simplenews_send_test($node, $test_addresses) {
   // Prevent session information from being saved while sending.
-  if ($original_session = drupal_save_session()) {
-    drupal_save_session(FALSE);
+  if ($original_session = backdrop_save_session()) {
+    backdrop_save_session(FALSE);
   }
 
   // Force the current user to anonymous to ensure consistent permissions.
   $original_user = $GLOBALS['user'];
-  $GLOBALS['user'] = drupal_anonymous_user();
+  $GLOBALS['user'] = backdrop_anonymous_user();
 
   // Send the test newsletter to the test address(es) specified in the node.
   // Build array of test email addresses
@@ -134,16 +134,16 @@ function simplenews_send_test($node, $test_addresses) {
   }
   if (count($recipients['user'])) {
     $recipients_txt = implode(', ', $recipients['user']);
-    drupal_set_message(t('Test newsletter sent to user %recipient.', array('%recipient' => $recipients_txt)));
+    backdrop_set_message(t('Test newsletter sent to user %recipient.', array('%recipient' => $recipients_txt)));
   }
   if (count($recipients['anonymous'])) {
     $recipients_txt = implode(', ', $recipients['anonymous']);
-    drupal_set_message(t('Test newsletter sent to anonymous %recipient.', array('%recipient' => $recipients_txt)));
+    backdrop_set_message(t('Test newsletter sent to anonymous %recipient.', array('%recipient' => $recipients_txt)));
   }
 
   $GLOBALS['user'] = $original_user;
   if ($original_session) {
-    drupal_save_session(TRUE);
+    backdrop_save_session(TRUE);
   }
 }
 
@@ -162,10 +162,10 @@ function simplenews_send_source(SimplenewsSourceInterface $source) {
   $params['simplenews_source'] = $source;
 
   // Send mail.
-  $message = drupal_mail('simplenews', $source->getKey(), $source->getRecipient(), $source->getLanguage(), $params, $source->getFromFormatted());
+  $message = backdrop_mail('simplenews', $source->getKey(), $source->getRecipient(), $source->getLanguage(), $params, $source->getFromFormatted());
 
   // Log sent result in watchdog.
-  if (variable_get('simplenews_debug', FALSE)) {
+  if (config_get('simplenews.settings', 'simplenews_debug')) {
     if ($message['result']) {
       watchdog('simplenews', 'Outgoing email. Message type: %type<br />Subject: %subject<br />Recipient: %to', array('%type' => $source->getKey(), '%to' => $message['to'], '%subject' => $message['subject']), WATCHDOG_DEBUG);
     }
@@ -221,7 +221,7 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
   if ($spool_list) {
 
     // Switch to the anonymous user.
-    simplenews_impersonate_user(drupal_anonymous_user());
+    simplenews_impersonate_user(backdrop_anonymous_user());
 
     $count_fail = $count_success = 0;
     $sent = array();
@@ -305,8 +305,8 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
       watchdog('simplenews', '%success emails sent, %fail failed.', array('%success' => $count_success, '%fail' => $count_fail));
     }
 
-    variable_set('simplenews_last_cron', REQUEST_TIME);
-    variable_set('simplenews_last_sent', $count_success);
+    config_set('simplenews.settings', 'simplenews_last_cron', REQUEST_TIME);
+    config_set('simplenews.settings', 'simplenews_last_sent', $count_success);
 
     simplenews_revert_user();
     return $count_success;
@@ -352,7 +352,7 @@ function simplenews_save_spool($spool) {
  *   this will be re-allocated and re-sent.
  */
 function simplenews_get_expiration_time() {
-  $timeout = variable_get('simplenews_spool_progress_expiration', 3600);
+  $timeout = config_get('simplenews.settings', 'simplenews_spool_progress_expiration');
   $expiration_time = REQUEST_TIME - $timeout;
   return $expiration_time;
 }
@@ -360,7 +360,7 @@ function simplenews_get_expiration_time() {
 /**
  * This function allocates messages to be sent in current run.
  *
- * Drupal acquire_lock guarantees that no concurrency issue happened.
+ * Backdrop acquire_lock guarantees that no concurrency issue happened.
  * If the message status is SIMPLENEWS_SPOOL_IN_PROGRESS but the maximum send
  * time has expired, the message id will be returned as a message which is not
  * allocated to another process.
@@ -424,7 +424,7 @@ function simplenews_get_spool($limit = SIMPLENEWS_UNLIMITED, $conditions = array
       $query->range(0, $limit);
     }
     foreach ($query->execute() as $message) {
-      if (drupal_strlen($message->data)) {
+      if (backdrop_strlen($message->data)) {
         $message->data = unserialize($message->data);
       }
       else {
@@ -541,7 +541,7 @@ function simplenews_count_spool(array $conditions = array()) {
  * @ingroup spool
  */
 function simplenews_clear_spool() {
-  $expiration_time = REQUEST_TIME - variable_get('simplenews_spool_expire', 0) * 86400;
+  $expiration_time = REQUEST_TIME - config_get('simplenews.settings', 'simplenews_spool_expire') * 86400;
   return db_delete('simplenews_mail_spool')
     ->condition('status', SIMPLENEWS_SPOOL_DONE)
     ->condition('timestamp', $expiration_time, '<=')
@@ -636,14 +636,14 @@ function simplenews_send_status_update() {
  *  'formatted' => Formatted, mime encoded, from name and address
  */
 function _simplenews_set_from() {
-  $address_default = variable_get('site_mail', ini_get('sendmail_from'));
-  $name_default = variable_get('site_name', 'Drupal');
+  $address_default = config_get('system.core', 'site_mail');
+  $name_default = config_get('system.core', 'site_name');
 
-  $address = variable_get('simplenews_from_address', $address_default);
-  $name = variable_get('simplenews_from_name', $name_default);
+  $address = config_get('simplenews.settings', 'simplenews_from_address');
+  $name = config_get('simplenews.settings', 'simplenews_from_name');
 
   // Windows based PHP systems don't accept formatted email addresses.
-  $formatted_address = (drupal_substr(PHP_OS, 0, 3) == 'WIN') ? $address : '"'. addslashes(mime_header_encode($name)) .'" <'. $address .'>';
+  $formatted_address = (backdrop_substr(PHP_OS, 0, 3) == 'WIN') ? $address : '"'. addslashes(mime_header_encode($name)) .'" <'. $address .'>';
 
   return array(
     'address' => $address,
@@ -654,7 +654,7 @@ function _simplenews_set_from() {
 /**
  * HTML to text conversion for HTML and special characters.
  *
- * Converts some special HTML characters in addition to drupal_html_to_text()
+ * Converts some special HTML characters in addition to backdrop_html_to_text()
  *
  * @param string $text
  *   The source text with HTML and special characters.
@@ -667,19 +667,19 @@ function _simplenews_set_from() {
 function simplenews_html_to_text($text, $inline_hyperlinks = TRUE) {
   // By replacing <a> tag by only its URL the URLs will be placed inline
   // in the email body and are not converted to a numbered reference list
-  // by drupal_html_to_text().
-  // URL are converted to absolute URL as drupal_html_to_text() would have.
+  // by backdrop_html_to_text().
+  // URL are converted to absolute URL as backdrop_html_to_text() would have.
   if ($inline_hyperlinks) {
     $pattern = '@<a[^>]+?href="([^"]*)"[^>]*?>(.+?)</a>@is';
     $text = preg_replace_callback($pattern, '_simplenews_absolute_mail_urls', $text);
   }
 
-  // Replace some special characters before performing the drupal standard conversion.
+  // Replace some special characters before performing the backdrop standard conversion.
   $preg = _simplenews_html_replace();
   $text = preg_replace(array_keys($preg), array_values($preg), $text);
 
-  // Perform standard drupal html to text conversion.
-  return drupal_html_to_text($text);
+  // Perform standard backdrop html to text conversion.
+  return backdrop_html_to_text($text);
 }
 
 /**
@@ -689,7 +689,7 @@ function simplenews_html_to_text($text, $inline_hyperlinks = TRUE) {
  */
 function _simplenews_absolute_mail_urls($match) {
   global $base_url, $base_path;
-  $regexp = &drupal_static(__FUNCTION__);
+  $regexp = &backdrop_static(__FUNCTION__);
   $url = $label = '';
 
   if ($match) {
@@ -699,11 +699,11 @@ function _simplenews_absolute_mail_urls($match) {
     list(, $url, $label) = $match;
     $url = strpos($url, '://') ? $url : preg_replace($regexp, $base_url . '/', $url);
 
-    // If the link is formed by Drupal's URL filter, we only return the URL.
+    // If the link is formed by Backdrop's URL filter, we only return the URL.
     // The URL filter generates a label out of the original URL.
-    if (strpos($label, '...') === drupal_strlen($label) - 3) {
+    if (strpos($label, '...') === backdrop_strlen($label) - 3) {
       // Remove ellipsis from end of label.
-      $label = drupal_substr($label, 0, drupal_strlen($label) - 3);
+      $label = backdrop_substr($label, 0, backdrop_strlen($label) - 3);
     }
     if (strpos($url, $label) !== FALSE) {
       return $url;
@@ -757,7 +757,7 @@ function _simplenews_measure_usec($start = FALSE) {
     return;
   }
 
-  $start_time = &drupal_static(__FUNCTION__);
+  $start_time = &backdrop_static(__FUNCTION__);
   $usage = getrusage();
   $now = (float)($usage['ru_stime.tv_sec'] . '.' . $usage['ru_stime.tv_usec']) + (float)($usage['ru_utime.tv_sec'] . '.' . $usage['ru_utime.tv_usec']);
 
@@ -908,7 +908,7 @@ class SimplenewsHTMLTestingMailSystem implements MailSystemInterface {
     // Join the body array into one string.
     $message['body'] = implode("\n\n", $message['body']);
     // Wrap the mail body for sending.
-    $message['body'] = drupal_wrap_mail($message['body']);
+    $message['body'] = backdrop_wrap_mail($message['body']);
     return $message;
   }
 
@@ -916,11 +916,11 @@ class SimplenewsHTMLTestingMailSystem implements MailSystemInterface {
    * Implements MailSystemInterface::mail().
    */
   public function mail(array $message) {
-    $captured_emails = variable_get('drupal_test_email_collector', array());
+    $captured_emails = config_get('simplenews.settings', 'backdrop_test_email_collector');
     $captured_emails[] = $message;
     // @todo: This is rather slow when sending 100 and more mails during tests.
     // Investigate in other methods like APC shared memory.
-    variable_set('drupal_test_email_collector', $captured_emails);
+    config_set('simplenews.settings', 'backdrop_test_email_collector', $captured_emails);
     return TRUE;
   }
 }

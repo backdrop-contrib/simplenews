@@ -14,7 +14,7 @@ function simplenews_drush_command() {
   $items['simplenews-spool-count'] = array(
     'description' => 'Print the current simplenews mail spool count',
     'aliases' => array('sn-sc'),
-    'drupal dependencies' => array('simplenews'),
+    'backdrop dependencies' => array('simplenews'),
     'options' => array(
       'pipe' => dt('Just print the count value to allow parsing'),
     )
@@ -31,7 +31,7 @@ function simplenews_drush_command() {
       'pipe' => dt('Just print the sent and remaining count on separate lines to allow parsing'),
     ),
     'aliases' => array('sn-ss'),
-    'drupal dependencies' => array('simplenews'),
+    'backdrop dependencies' => array('simplenews'),
   );
 
   return $items;
@@ -61,7 +61,7 @@ function drush_simplenews_spool_send($limit = FALSE) {
   module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
 
   if ($limit === FALSE) {
-    $limit = variable_get('simplenews_throttle');
+    $limit = config_get('simplenews.settings', 'simplenews_throttle');
   }
   elseif ($limit == 0) {
     $limit = SIMPLENEWS_UNLIMITED;

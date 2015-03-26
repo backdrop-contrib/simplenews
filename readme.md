@@ -1,10 +1,32 @@
+SIMPLENEWS
+===========
 
-DESCRIPTION
------------
+CONTENTS OF THIS FILE
+---------------------
+
+ - Introduction
+ - Requirements
+ - Installation
+ - Permissions
+ - Usage
+ - Sponsors
+
+INTRODUCTION
+------------
 
 Simplenews publishes and sends newsletters to lists of subscribers. Both
 anonymous and authenticated users can opt-in to different mailing lists.
 HTML email can be sent by adding Mime mail module.
+
+TESTED
+-----
+
+@todo
+This module has NOT BEEN TESTED and is being ported to Backdrop.  It may work.
+
+KNOWN ISSUES
+---------------------
+@todo
 
 
 REQUIREMENTS
@@ -19,14 +41,13 @@ REQUIREMENTS
  * Additionally when using Drush to start cron, it is important to use the
    argument --uri=http://www.example.com
 
-
 INSTALLATION
 ------------
 
- 1. CREATE DIRECTORY
+ 1. INSTALL
 
-    Create a new directory "simplenews" in the sites/all/modules directory and
-    place the entire contents of this simplenews folder in it.
+    Simplenews can be installed via the standard Backdrop installation process
+(http://drupal.org/documentation/install/modules-themes/modules-7).
 
  2. ENABLE THE MODULE
 
@@ -213,7 +234,7 @@ INSTALLATION
  13. TIPS
     A subscription page is available at: /newsletter/subscriptions
 
-    The Elysia Cron module (http://drupal.org/project/elysia_cron) can be used
+    The Elysia Cron module can be used
     to start the simplenews cron hook more often than others, so that newsletter
     are sent faster without decreasing site performance due to long-running cron
     hooks.
@@ -228,21 +249,50 @@ INSTALLATION
       $base_url = 'http://www.example.com';  // NO trailing slash!
 
 
-RELATED MODULES
+PERMISSIONS
 ------------
 
- * Elysia Cron
-   Allows fine grained control over cron tasks.
-   http://http://drupal.org/project/elysia_cron
- * Mailsystem
-   Extends drupal core mailystem wirh Administrative UI and Developers API.
-   http://drupal.org/project/mailsystem
- * Maillog
-   Captures outgoing mails, helps users debugging simplenews.
-   http://drupal.org/project/maillog
+@todo
 
 
-DOCUMENTATION
--------------
-More help can be found on the help pages: example.com/admin/help/simplenews
-and in the drupal.org handbook: http://drupal.org/node/197057
+USAGE
+-----
+Sending nodes as newsletters to subscribers
+Multiple newsletter categories with separate settings
+Per category and multi-signup Blocks and Pages
+Subscriber management including mass-subscription and export
+Optional E-mail confirmations for anonymous users
+Customizable newsletter templates
+Support for HTML (including text alternative) newsletter when used in combination with a supported mail system module
+Views and Rules integration
+Support for multi-language newsletters
+
+
+
+License
+-------
+
+This project is GPL v2 software. See the LICENSE.txt file in this directory for
+complete text.
+
+Maintainers
+-----------
+
+- seeking
+
+Current Maintainers on Drupal:
+
+Simplenews is currently maintained by MD Systems (by Miro Dietiker, Berdir, s_leu) with the help of Simon Georges of Makina-Corpus.
+Originally written by DriesK, later maintained by RobRoy and Sutharsan.
+
+Berdir <https://www.drupal.org/u/berdir>
+miro_dietiker <https://www.drupal.org/u/miro_dietiker>
+Simon Georges <https://www.drupal.org/u/simon-georges>
+Sutharsan <https://www.drupal.org/u/sutharsan>
+AlexisWilke <https://www.drupal.org/u/alexiswilke>
+
+If Simplenews is critical for your business, please contact us and help support the ongoing further development of this module. Your donations are appreciated. Also if you like to join the Simplenews maintainer team, don't hesitate to contact us. We are looking forward to hearing from you.
+
+Ported to Backdrop by:
+
+ - biolithic <https://github.com/biolithic>

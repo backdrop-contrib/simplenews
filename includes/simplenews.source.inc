@@ -90,7 +90,7 @@ interface SimplenewsSourceInterface {
   function getTokenContext();
 
   /**
-   * Returns the mail key to be used for drupal_mail().
+   * Returns the mail key to be used for backdrop_mail().
    *
    * @return
    *   The mail key, either test or node.
@@ -330,7 +330,7 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
    * Return the Simplenews source implementation for the given mail spool row.
    */
   protected function getSourceImplementation($spool_data) {
-    return variable_get('simplenews_source', 'SimplenewsSourceNode');
+    return config_get('simplenews.settings', 'simplenews_source');
   }
 }
 
@@ -362,7 +362,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   protected $subscriber;
 
   /**
-   * The mail key used for drupal_mail().
+   * The mail key used for backdrop_mail().
    */
   protected $key = 'test';
 
@@ -436,7 +436,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    * Initialize the cache implementation.
    */
   protected function initCache() {
-    $class = variable_get('simplenews_source_cache', 'SimplenewsSourceCacheBuild');
+    $class = config_get('simplenews.settings', 'simplenews_source_cache');
     $this->cache = new $class($this);
   }
 
@@ -540,7 +540,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    */
   function getFromFormatted() {
     // Windows based PHP systems don't accept formatted email addresses.
-    if (drupal_substr(PHP_OS, 0, 3) == 'WIN') {
+    if (backdrop_substr(PHP_OS, 0, 3) == 'WIN') {
       return $this->getFromAddress();
     }
 
@@ -866,7 +866,7 @@ abstract class SimplenewsSourceCacheStatic implements SimplenewsSourceCacheInter
   public function __construct(SimplenewsSourceNodeInterface $source) {
     $this->source = $source;
 
-    self::$cache = &drupal_static(__CLASS__, array());
+    self::$cache = &backdrop_static(__CLASS__, array());
   }
 
   /**
