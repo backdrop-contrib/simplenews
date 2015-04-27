@@ -1,15 +1,20 @@
 SIMPLENEWS
-===========
+===================
 
 CONTENTS OF THIS FILE
 ---------------------
 
  - Introduction
+ - Tested
+ - Known Issues
+ - Special Thanks
  - Requirements
  - Installation
- - Permissions
+ - Coming From Drupal?
  - Usage
- - Sponsors
+ - License
+ - Credits
+ - Maintainers
 
 INTRODUCTION
 ------------
@@ -21,13 +26,37 @@ HTML email can be sent by adding Mime mail module.
 TESTED
 -----
 
-@todo
-This module has NOT BEEN TESTED and is being ported to Backdrop.  It may work.
+Email Modules
+The following modules ported to Backdrop are inter-related to the mailing system:
+
+simplenews
+
+simplenews_scheduler
+
+mimemail
+
+mandrill
+
+mailsystem
+
+smtp
+
+They have been converted from Drupal to Backdrop but are still not working.  They need debugging into what was changed between the systems and how to fix it. I, biolithic the one who did the intial conversion, lack the heart or time in the spring of 2015 to debug them currently.
+
+Do you have a need or desire for email newsletters?  You are welcome to submit pull requests to finish these modules.  It may not be a lot of work.  Thanks!
 
 KNOWN ISSUES
 ---------------------
+
 @todo
 
+SPECIAL THANKS
+--------------
+
+Simplenews is currently maintained by MD Systems (by Miro Dietiker, Berdir, s_leu) with the help of Simon Georges of Makina-Corpus.
+Originally written by DriesK, later maintained by RobRoy and Sutharsan.
+
+If Simplenews is critical for your business, please contact us and help support the ongoing further development of this module. Your donations are appreciated. Also if you like to join the Simplenews maintainer team, don't hesitate to contact us. We are looking forward to hearing from you.
 
 REQUIREMENTS
 ------------
@@ -44,10 +73,26 @@ REQUIREMENTS
 INSTALLATION
 ------------
 
+Install this module using the official Backdrop CMS instructions at https://backdropcms.org/guide/modules
+
+
+COMING FROM DRUPAL?
+-------------------
+
+Nothing substantially different.
+
+PERMISSIONS
+------------
+
+@todo
+
+
+USAGE
+-----
+
  1. INSTALL
 
     Simplenews can be installed via the standard Backdrop installation process
-(http://drupal.org/documentation/install/modules-themes/modules-7).
 
  2. ENABLE THE MODULE
 
@@ -248,42 +293,15 @@ INSTALLATION
     to
       $base_url = 'http://www.example.com';  // NO trailing slash!
 
-
-PERMISSIONS
-------------
-
-@todo
-
-
-USAGE
------
-Sending nodes as newsletters to subscribers
-Multiple newsletter categories with separate settings
-Per category and multi-signup Blocks and Pages
-Subscriber management including mass-subscription and export
-Optional E-mail confirmations for anonymous users
-Customizable newsletter templates
-Support for HTML (including text alternative) newsletter when used in combination with a supported mail system module
-Views and Rules integration
-Support for multi-language newsletters
-
-
-
-License
+LICENSE
 -------
 
-This project is GPL v2 software. See the LICENSE.txt file in this directory for
-complete text.
+This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
 
-Maintainers
+CREDITS
 -----------
 
-- seeking
-
-Current Maintainers on Drupal:
-
-Simplenews is currently maintained by MD Systems (by Miro Dietiker, Berdir, s_leu) with the help of Simon Georges of Makina-Corpus.
-Originally written by DriesK, later maintained by RobRoy and Sutharsan.
+This module is based on the Simplenews module for Drupal, originally written and maintained by a large number of contributors, including:
 
 Berdir <https://www.drupal.org/u/berdir>
 miro_dietiker <https://www.drupal.org/u/miro_dietiker>
@@ -291,7 +309,10 @@ Simon Georges <https://www.drupal.org/u/simon-georges>
 Sutharsan <https://www.drupal.org/u/sutharsan>
 AlexisWilke <https://www.drupal.org/u/alexiswilke>
 
-If Simplenews is critical for your business, please contact us and help support the ongoing further development of this module. Your donations are appreciated. Also if you like to join the Simplenews maintainer team, don't hesitate to contact us. We are looking forward to hearing from you.
+MAINTAINERS
+-----------
+
+- seeking
 
 Ported to Backdrop by:
 

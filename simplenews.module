@@ -71,6 +71,17 @@ define('SIMPLENEWS_OPT_INOUT_DOUBLE', 'double');
 define('SIMPLENEWS_UNLIMITED', -1);
 
 /**
+ * Implements hook_config_info().
+ */
+function simplenews_config_info() {
+  $prefixes['simplenews.settings'] = array(
+    'label' => t('simplenews settings'),
+    'group' => t('simplenews'),
+  );
+  return $prefixes;
+} 
+
+/**
  * Implements hook_permission().
  *
  * @todo Change sort order where required: http://drupal.org/node/224333#sorting_permissions
