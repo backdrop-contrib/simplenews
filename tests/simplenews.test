@@ -6,13 +6,15 @@
  *
  * @ingroup simplenews
  */
-class SimplenewsTestCase extends DrupalWebTestCase {
+class SimplenewsTestCase extends BackdropWebTestCase {
 
   // Use testing profile to speed up tests.
   protected $profile = 'testing';
   // Store generated email addresses used to prevent duplications.
   protected $mailadress_cache;
-
+  /**
+   * {@inheritdoc}
+   */
   public function setUp() {
     $modules = func_get_args();
     if (isset($modules[0]) && is_array($modules[0])) {
@@ -24,7 +26,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
     //$this->simplenews_admin_user = $this->drupalCreateUser(array('administer newsletters', 'administer simplenews settings', 'administer simplenews subscriptions'));
     //$this->sender_user = $this->drupalCreateUser(array('create simplenews content', 'edit own simplenews content', 'send newsletter'));
 
-    config_set('simplenews.settings', 'site_mail', 'user@example.com');
+    variable_set('site_mail', 'user@example.com');
     $this->mailadress_cache = array();
   }
 
@@ -38,7 +40,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
 
     if ($enabled) {
       db_insert('role_permission')
-        ->fields(array('rid', 'permission'), array(BACKDROP_ANONYMOUS_RID, 'subscribe to newsletters'))
+        ->fields(array('rid', 'permission'), array(DRUPAL_ANONYMOUS_RID, 'subscribe to newsletters'))
         ->execute();
     }
   }
@@ -53,7 +55,7 @@ class SimplenewsTestCase extends DrupalWebTestCase {
 
     if ($enabled) {
       db_insert('role_permission')
-        ->fields(array('rid', 'permission'), array(BACKDROP_AUTHENTICATED_RID, 'subscribe to newsletters'))
+        ->fields(array('rid', 'permission'), array(DRUPAL_AUTHENTICATED_RID, 'subscribe to newsletters'))
         ->execute();
     }
   }
@@ -83,11 +85,11 @@ class SimplenewsTestCase extends DrupalWebTestCase {
    * @return newsletter tid.
    */
   function getRandomNewsletter() {
-    $vid = db_query('SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = :name', array(':name' => 'newsletter'))->fetchField();
-    if ($taxonomies = taxonomy_get_tree($vid)) {
+    $vocabulary = db_query('SELECT vocabulary FROM {taxonomy_vocabulary} WHERE machine_name = :name', array(':name' => 'newsletter'))->fetchField();
+    if ($taxonomies = taxonomy_get_tree($vocabulary)) {
       $tids = array();
       foreach ($taxonomies as $newsletter) {
-        $tids[] = $newsletter->tid;
+        $tids[] = $newsletter->vocabulary;
       }
       $key = array_rand($tids);
       return $tids[$key];
@@ -122,23 +124,23 @@ class SimplenewsTestCase extends DrupalWebTestCase {
     $edit = array();
     $edit['regions[bartik]'] = 'sidebar_first';
     if (isset($settings['message'])) {
-      $edit['simplenews_block_m_' . $tid] = $settings['message'];
+      $edit['simplenews_block_message_' . $tid] = $settings['message'];
     }
     if (isset($settings['form'])) {
-      $edit['simplenews_block_f_' . $tid] = $settings['form'];
+      $edit['simplenews_block_interface_' . $tid] = $settings['form'];
     }
     if (isset($settings['link to previous'])) {
-      $edit['simplenews_block_l_' . $tid] = $settings['link to previous'];
+      $edit['simplenews_block_link_' . $tid] = $settings['link to previous'];
     }
     if (isset($settings['previous issues'])) {
-      $edit['simplenews_block_i_status_' . $tid] = $settings['previous issues'];
+      $edit['simplenews_block_previous_' . $tid] = $settings['previous issues'];
     }
     if (isset($settings['issue count'])) {
-      $edit['simplenews_block_i_' . $tid] = $settings['issue count'];
+      $edit['simplenews_block_quantity_' . $tid] = $settings['issue count'];
       // @todo check the count
     }
     if (isset($settings['rss feed'])) {
-      $edit['simplenews_block_r_' . $tid] = $settings['rss feed'];
+      $edit['simplenews_block_rss_' . $tid] = $settings['rss feed'];
     }
 
     // Simplify confirmation form submission by hiding the subscribe block on
@@ -148,7 +150,9 @@ class SimplenewsTestCase extends DrupalWebTestCase {
     $this->drupalPost('admin/structure/block/manage/simplenews/' . $tid . '/configure', $edit, t('Save block'));
     $this->assertText('The block configuration has been saved.', 'The newsletter block configuration has been saved.');
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function setUpSubscribers($count = 100, $tid = 1) {
     // Subscribe users.
     $this->subscribers = array();
@@ -168,7 +172,9 @@ class SimplenewsTestCase extends DrupalWebTestCase {
   }
 
 }
-
+/**
+ * {@inheritdoc}
+ */
 class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
 
   /**
@@ -361,7 +367,7 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
     $this->assertTrue($found, t('Single add confirmation URL found: @url', array('@url' => $confirm_url)));
 
     // Change behavior to always use combined mails.
-    config_set('simplenews.settings', 'simplenews_use_combined', 'always');
+    variable_set('simplenews_use_combined', 'always');
     $edit = array(
       'mail' => $mail,
       'newsletters[' . $tid . ']' => TRUE,
@@ -376,7 +382,7 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
     $this->assertTrue($found, t('Multi confirmation URL found: @url', array('@url' => $confirm_url)));
 
     // Change behavior to never, should send two separate mails.
-    config_set('simplenews.settings', 'simplenews_use_combined', 'never');
+    variable_set('simplenews_use_combined', 'never');
     $edit = array(
       'mail' => $mail,
     );
@@ -506,8 +512,8 @@ class SimplenewsSubscribeTestCase extends SimplenewsTestCase {
 
     // Test that it is possible to register with a mail address that is already
     // a subscriber.
-    config_set('simplenews.settings', 'user_register', 1);
-    config_set('simplenews.settings', 'user_email_verification', FALSE);
+    variable_set('user_register', 1);
+    variable_set('user_email_verification', FALSE);
 
     $edit = array(
       'name' => $this->randomName(),
@@ -1009,8 +1015,8 @@ class SimpleNewsAdministrationTestCase extends SimplenewsTestCase {
   function testCategorySettings() {
 
     // Allow registration of new accounts without approval.
-    config_set('simplenews.settings', 'user_register', 1);
-    config_set('simplenews.settings', 'user_email_verification', FALSE);
+    variable_set('user_register', 1);
+    variable_set('user_email_verification', FALSE);
 
     // Allow authenticated users to subscribe.
     $this->setAuthenticatedUserSubscription(TRUE);
@@ -1119,7 +1125,7 @@ class SimpleNewsAdministrationTestCase extends SimplenewsTestCase {
         $this->assertText(t('You have been subscribed to @name.', array('@name' => $category->name)));
       }
       else {
-        // All other newsletters must not show a message, e.g. those which were
+        // All other newsletters must not show a message, e.g., those which were
         // subscribed silently.
         $this->assertNoText(t('You have been subscribed to @name.', array('@name' => $category->name)));
       }
@@ -1546,7 +1552,7 @@ class SimpleNewsAdministrationTestCase extends SimplenewsTestCase {
     drupal_static_reset('simplenews_user_is_subscribed');
     $this->assertFalse(simplenews_user_is_subscribed($subscriber->mail, reset($subscriber->tids), t('Subscriber not subscribed anymore.')));
 
-    // @todo Test Admin subscriber edit preferred language $subscription->language
+    // @todo Test Admin subscriber edit preferred language $subscription->langcode
 
     // Register a subscriber with an insecure e-mail address through the API
     // and make sure the address is correctly encoded.
@@ -1597,7 +1603,7 @@ class SimpleNewsAdministrationTestCase extends SimplenewsTestCase {
     $this->assertEqual('simplenews_test', $mails[0]['id']);
     // @todo: Test with a custom test mail address.
     $this->assertEqual('user@example.com', $mails[0]['to']);
-    $this->assertEqual(t('[Drupal newsletter] @title', array('@title' => $edit['title'])), $mails[0]['subject']);
+    $this->assertEqual(t('[Backdrop newsletter] @title', array('@title' => $edit['title'])), $mails[0]['subject']);
 
     // Update the content type, remove the simpletest checkbox.
     $edit = array(
@@ -1635,7 +1641,9 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
       'dependencies' => array('i18n_taxonomy', 'variable'),
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function setUp() {
     parent::setUp(array('locale', 'i18n', 'variable', 'i18n_string', 'i18n_taxonomy', 'translation', 'i18n_translation'));
     $this->admin_user = $this->drupalCreateUser(array('bypass node access', 'administer nodes', 'administer languages', 'administer content types', 'access administration pages', 'administer filters', 'administer taxonomy', 'translate interface', 'subscribe to newsletters', 'administer site configuration', 'translate content', 'administer simplenews subscriptions', 'send newsletter'));
@@ -1647,7 +1655,7 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
    * Install a the specified language if it has not been already. Otherwise make sure that
    * the language is enabled.
    *
-   * Copied from Drupali18nTestCase::addLanguage().
+   * Copied from Backdropi18nTestCase::addLanguage().
    *
    * @param $language_code
    *   The language code the check.
@@ -1682,7 +1690,9 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
       $this->assertRaw(t('Configuration saved.'), t('Language successfully enabled.'));
     }
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function testCategoryTranslation() {
     $this->drupalLogin($this->admin_user);
     // Make Input Format "Filtered Text" translatable
@@ -1715,13 +1725,15 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
 
     // Visit newsletter selection page in english.
     $this->drupalGet('user/' . $this->admin_user->uid . '/edit/simplenews');
-    $this->assertText(t('Drupal newsletter'));
+    $this->assertText(t('Backdrop newsletter'));
 
     // And now in spanish.
     $this->drupalGet('es/user/' . $this->admin_user->uid . '/edit/simplenews');
     $this->assertText($es_name, t('Category name is translated.'));
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function testContentTranslation() {
     // Sign up two users, one in english, another in spanish.
     $english_mail = $this->randomEmail();
@@ -1842,7 +1854,7 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
   /**
    * Set up configuration for multiple languages.
    *
-   * Copied from Drupali18nTestCase::setUpLanguages().
+   * Copied from Backdropi18nTestCase::setUpLanguages().
    */
   function setUpLanguages($admin_permissions = array()) {
 
@@ -1864,16 +1876,22 @@ class SimpleNewsI18nTestCase extends SimplenewsTestCase {
   }
 
 }
-
+/**
+ * {@inheritdoc}
+ */
 class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
-
+  /**
+   * {@inheritdoc}
+   */
   public function setUp() {
     parent::setUp();
 
     // Use the test mail class instead of the default mail handler class.
-    $this->config_set('simplenews.settings', 'mail_system', array('default-system' => 'TestingMailSystem'));
+    $this->variable_set('mail_system', array('default-system' => 'TestingMailSystem'));
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function prepareUpgradePath() {
     // Delete everything except taxnomy and simplenews from system to
     // prevent their update functions to be run.
@@ -1887,7 +1905,9 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
       ->condition('name', 'simplenews')
       ->execute();
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function assertUpgradePath() {
     // Enable simplenews.
     $edit = array(
@@ -1902,7 +1922,7 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
     simplenews_subscribe_user($mail, $tid, FALSE);
 
     $this->drupalGet('admin/config/services/simplenews');
-    $this->assertText('Drupal 6 newsletter');
+    $this->assertText('Backdrop 6 newsletter');
     $this->assertText('Test');
 
     $this->drupalGet('admin/people/simplenews');
@@ -1918,10 +1938,10 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
 
     $this->drupalGet('node/add/simplenews');
     $this->assertText('Newsletter');
-    $this->assertText('Drupal 6 newsletter');
+    $this->assertText('Backdrop 6 newsletter');
 
     // Check category field
-    $this->assertEqual(config_get('simplenews.settings', 'simplenews_category_field'));
+    $this->assertEqual(variable_get('simplenews_category_field'), 'taxonomy_vocabulary_1');
     $this->assertTrue(field_info_instance('node', 'taxonomy_vocabulary_1', 'simplenews'));
 
     // Create an issue.
@@ -1943,7 +1963,7 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
 //    debug($mails);
 //    $this->assertEqual('simplenews_test', $mails[0]['id']);
 //    $this->assertEqual('user@example.com', $mails[0]['to']);
-//    $this->assertEqual(t('[Drupal newsletter] @title', array('@title' => $edit['title'])), $mails[0]['subject']);
+//    $this->assertEqual(t('[Backdrop newsletter] @title', array('@title' => $edit['title'])), $mails[0]['subject']);
 
     // Make sure that new categories can be created.
     $edit = array(
@@ -1960,7 +1980,9 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
  * Upgrade test from 6.x-1.x
  */
 class SimpleNewsUpgradePath61TestCase extends SimpleNewsUpgradePathTestCase {
-
+  /**
+   * {@inheritdoc}
+   */
   public static function getInfo() {
     return array(
       'name' => 'Simplenews 6.x-1.x upgrade path',
@@ -1968,7 +1990,9 @@ class SimpleNewsUpgradePath61TestCase extends SimpleNewsUpgradePathTestCase {
       'group' => 'Simplenews',
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function setUp() {
     // Path to the database dump files.
     $this->databaseDumpFiles = array(
@@ -1994,7 +2018,9 @@ class SimpleNewsUpgradePath61TestCase extends SimpleNewsUpgradePathTestCase {
  * Upgrade test from 6.x-2.x
  */
 class SimpleNewsUpgradePath62TestCase extends SimpleNewsUpgradePathTestCase {
-
+  /**
+   * {@inheritdoc}
+   */
   public static function getInfo() {
     return array(
       'name' => 'Simplenews 6.x-2.x upgrade path',
@@ -2002,7 +2028,9 @@ class SimpleNewsUpgradePath62TestCase extends SimpleNewsUpgradePathTestCase {
       'group' => 'Simplenews',
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function setUp() {
     // Path to the database dump files.
     $this->databaseDumpFiles = array(
@@ -2011,7 +2039,7 @@ class SimpleNewsUpgradePath62TestCase extends SimpleNewsUpgradePathTestCase {
     parent::setUp();
 
     // Use the test mail class instead of the default mail handler class.
-    $this->config_set('simplenews.settings', 'mail_system', array('default-system' => 'TestingMailSystem'));
+    $this->variable_set('mail_system', array('default-system' => 'TestingMailSystem'));
   }
 
   /**
@@ -2042,7 +2070,9 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
       'group' => t('Simplenews'),
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function setUp() {
     parent::setUp();
 
@@ -2063,7 +2093,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $node->title = $this->randomName();
     $node->uid = 0;
     $node->status = 1;
-    $node->language = LANGUAGE_NONE;
+    $node->langcode = LANGUAGE_NONE;
     $node->field_simplenews_term[LANGUAGE_NONE][0]['tid'] = $this->getRandomNewsletter();
     node_save($node);
 
@@ -2080,7 +2110,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $node->title, t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $node->title, t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2092,7 +2122,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $node->title = $this->randomName();
     $node->uid = 0;
     $node->status = 1;
-    $node->language = LANGUAGE_NONE;
+    $node->langcode = LANGUAGE_NONE;
     $node->field_simplenews_term[LANGUAGE_NONE][0]['tid'] = $this->getRandomNewsletter();
     node_save($node);
 
@@ -2120,7 +2150,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendNowNoCron() {
     // Disable cron.
-    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
+    variable_set('simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2153,7 +2183,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $edit['title'], t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $edit['title'], t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2168,7 +2198,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendMultipleNoCron() {
     // Disable cron.
-    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
+    variable_set('simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $nodes = array();
@@ -2215,7 +2245,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $first->title, t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $first->title, t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2227,7 +2257,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendNowCronThrottle() {
 
-    config_set('simplenews.settings', 'simplenews_throttle', 3);
+    variable_set('simplenews_throttle', 3);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2289,7 +2319,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $edit['title'], t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $edit['title'], t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2361,7 +2391,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $edit['title'], t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $edit['title'], t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2373,7 +2403,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
    */
   function testSendPublishNoCron() {
     // Disable cron.
-    config_set('simplenews.settings', 'simplenews_use_cron', FALSE);
+    variable_set('simplenews_use_cron', FALSE);
 
     // Verify that the newsletter settings are shown.
     $this->drupalGet('node/add/simplenews');
@@ -2419,7 +2449,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $edit['title'], t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $edit['title'], t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2474,7 +2504,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $this->assertText(t('Newsletter category'));
 
     // Prevent deleting the mail spool entries automatically.
-    config_set('simplenews.settings', 'simplenews_spool_expire', 1);
+    variable_set('simplenews_spool_expire', 1);
 
     $edit = array(
       'title' => $this->randomName(),
@@ -2521,7 +2551,7 @@ class SimplenewsSendTestCase extends SimplenewsTestCase {
     $mails = $this->drupalGetMails();
     $this->assertEqual(5, count($mails), t('All mails were sent.'));
     foreach ($mails as $mail) {
-      $this->assertEqual($mail['subject'], '[Drupal newsletter] ' . $edit['title'], t('Mail has correct subject'));
+      $this->assertEqual($mail['subject'], '[Backdrop newsletter] ' . $edit['title'], t('Mail has correct subject'));
       $this->assertTrue(isset($this->subscribers[$mail['to']]), t('Found valid recipient'));
       unset($this->subscribers[$mail['to']]);
     }
@@ -2569,7 +2599,9 @@ class SimplenewsSourceTestCase extends SimplenewsTestCase {
       'group' => t('Simplenews'),
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   function setUp() {
     parent::setUp();
 
@@ -2725,7 +2757,7 @@ class SimplenewsSourceTestCase extends SimplenewsTestCase {
     $this->setUpSubscribers(5);
 
     // Use custom testing mail system to support HTML mails.
-    config_set('simplenews.settings', 'mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
+    variable_set('mail_system', array('default-system' => 'SimplenewsHTMLTestingMailSystem'));
 
     // Set the format to HTML.
     $this->drupalGet('admin/config/services/simplenews');
@@ -2943,7 +2975,7 @@ class SimplenewsSourceTestCase extends SimplenewsTestCase {
 /**
  * Unit tests for certain functions.
  */
-class SimplenewsUnitTest extends DrupalUnitTestCase {
+class SimplenewsUnitTest extends BackdropUnitTestCase {
 
   static function getInfo() {
     return array(
@@ -2952,7 +2984,9 @@ class SimplenewsUnitTest extends DrupalUnitTestCase {
       'group' => 'Simplenews',
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function testMasking() {
     module_load_include('inc', 'simplenews', 'includes/simplenews.subscription');
 

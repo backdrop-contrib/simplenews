@@ -17,7 +17,7 @@ function simplenews_drush_command() {
     'backdrop dependencies' => array('simplenews'),
     'options' => array(
       'pipe' => dt('Just print the count value to allow parsing'),
-    )
+    ),
   );
 
   $items['simplenews-spool-send'] = array(

@@ -9,6 +9,9 @@
  * Provide translatable simplenews_category.opt_inout Options.
  */
 class simplenews_handler_field_category_new_account extends views_handler_field {
+  /**
+   * {@inheritdoc}
+   */
   function render($values) {
     $opt = array(
       'none' => t('None'),

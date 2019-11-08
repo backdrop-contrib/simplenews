@@ -721,7 +721,7 @@ function simplenews_views_data() {
       'click_sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'views_handler_filter_string'
+      'handler' => 'views_handler_filter_string',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_srting',
@@ -739,10 +739,10 @@ function simplenews_views_data() {
       'click_sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'simplenews_handler_filter_category_hyperlinks'
+      'handler' => 'simplenews_handler_filter_category_hyperlinks',
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument_numeric'
+      'handler' => 'views_handler_argument_numeric',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -757,7 +757,7 @@ function simplenews_views_data() {
       'click_sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'simplenews_handler_filter_category_new_account'
+      'handler' => 'simplenews_handler_filter_category_new_account',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',
@@ -775,7 +775,7 @@ function simplenews_views_data() {
       'click_sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'simplenews_handler_filter_category_opt_inout'
+      'handler' => 'simplenews_handler_filter_category_opt_inout',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',

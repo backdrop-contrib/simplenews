@@ -9,6 +9,9 @@
  * Display HTML Mail Hyperlinks position settings.
  */
 class simplenews_handler_filter_category_hyperlinks extends views_handler_filter_in_operator {
+  /**
+   * {@inheritdoc}
+   */
   function get_value_options() {
     $this->value_options = array(
       0 => t('Bottom'),

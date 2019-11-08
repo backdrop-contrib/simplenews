@@ -1,319 +1,124 @@
-SIMPLENEWS
-===================
 
-CONTENTS OF THIS FILE
----------------------
+Description
+-----------
 
- - Introduction
- - Tested
- - Known Issues
- - Special Thanks
- - Requirements
- - Installation
- - Coming From Drupal?
- - Usage
- - License
- - Credits
- - Maintainers
+Simplenews publishes and sends newsletters to lists of subscribers. Both anonymous and authenticated users can opt-in to different mailing lists. HTML email can be sent by adding Mime mail module.
 
-INTRODUCTION
-------------
 
-Simplenews publishes and sends newsletters to lists of subscribers. Both
-anonymous and authenticated users can opt-in to different mailing lists.
-HTML email can be sent by adding Mime mail module.
-
-TESTED
------
-
-Email Modules
-The following modules ported to Backdrop are inter-related to the mailing system:
-
-simplenews
-
-simplenews_scheduler
-
-mimemail
-
-mandrill
-
-mailsystem
-
-smtp
-
-They have been converted from Drupal to Backdrop but are still not working.  They need debugging into what was changed between the systems and how to fix it. I, biolithic the one who did the intial conversion, lack the heart or time in the spring of 2015 to debug them currently.
-
-Do you have a need or desire for email newsletters?  You are welcome to submit pull requests to finish these modules.  It may not be a lot of work.  Thanks!
-
-KNOWN ISSUES
----------------------
-
-@todo
-
-SPECIAL THANKS
---------------
-
-Simplenews is currently maintained by MD Systems (by Miro Dietiker, Berdir, s_leu) with the help of Simon Georges of Makina-Corpus.
-Originally written by DriesK, later maintained by RobRoy and Sutharsan.
-
-If Simplenews is critical for your business, please contact us and help support the ongoing further development of this module. Your donations are appreciated. Also if you like to join the Simplenews maintainer team, don't hesitate to contact us. We are looking forward to hearing from you.
-
-REQUIREMENTS
+Requirements
 ------------
 
  * For large mailing lists, cron is required.
- * HTML-format newsletters and/or newsletters with file attachments require the
-   mime mail or HMTL mail module.
- * When sending newsletters on regular cron (cron.php), it is important that
-   the base url (settings.php, variable $base_url) is set correctly or links
-   inside the newsletter will not work. See the Tips (13.) below.
- * Additionally when using Drush to start cron, it is important to use the
-   argument --uri=http://www.example.com
+ * HTML-format newsletters and/or newsletters with file attachments require the mime mail or HMTL mail module.
+ * When sending newsletters on regular cron (cron.php), it is important that the base url (settings.php, variable $base_url) is set correctly or links inside the newsletter will not work. 
+ * Additionally when using Drush to start cron, it is important to use the argument --uri=http://www.example.com
 
-INSTALLATION
+
+Installation
 ------------
 
-Install this module using the official Backdrop CMS instructions at https://backdropcms.org/guide/modules
+You can install the module through your Backdrop website's user interface per instructions on https://backdropcms.org/guide/modules or by simply running the `drush en simplenews` command on command line.
+
+Configuration
+-------------
 
 
-COMING FROM DRUPAL?
--------------------
+* To administer various Simplenews settings go to Configuration > Web services > Newsletter > Settings  (`/admin/config/services/simplenews/settings`).
 
-Nothing substantially different.
+* Add or edit newsletter categories on Configuration > Web services > Newsletter (`/admin/config/services/simplenews`). 
 
-PERMISSIONS
-------------
+* By default Simplenews creates a new `Simplenews newsletter` content type, however you can enable any other content type to use as a newsletter on Structure > ccontent type > Configure > Publishing settings > Use as simplenews newsletter.
 
-@todo
+* To enable Simplenews subscription blocks go to Structure > Layouts and choose a layout. Most probably you want to place subscription blocks on Home page or Default layouts. Choose a layout region where you want to place a Simplenews block, click on "Add block" and choose one of `Newsletter: your website newsletter` or `Newsletter: Multi Subscription`.
 
 
-USAGE
+Usage
 -----
 
- 1. INSTALL
+1. ENABLE SIMPLENEWS BLOCK
 
-    Simplenews can be installed via the standard Backdrop installation process
+With the Simplenews block users can subscribe to a newsletter. Enable a Simplenews block per Newsletter category on Configuration > Web services Newsletters page.
 
- 2. ENABLE THE MODULE
+2. SEND MAILING LISTS
 
-    Enable the module on the Modules admin page.
+Cron is required to send large mailing lists. If you have a medium or large size mailing list (i.e. more than 500 subscribers) always use cron to send the newsletters.
 
- 3. ACCESS PERMISSION
+To use cron:
+  * Check the 'Use cron to send newsletters' checkbox.
+  * Set the 'Cron throttle' to the number of newsletters send per cron run. Too high values may lead to mail server overload or you may hit hosting restrictions. 
 
-    Grant the access at the Access control page:
-      People > Permissions.
+Don't use cron:
+  * Uncheck the 'Use cron to send newsletters' checkbox.
 
- 4. CONFIGURE SIMPLENEWS
+All newsletters will be sent immediately when saving the node. If not all emails can be sent within the available php execution time, the remainder will be sent by cron. Therefore ALWAYS enable cron.
 
-    Configure Simplenews on the Simplenews admin pages:
-      Configuration > Simplenews.
+These settings are found on the Newsletter Settings page under 'Send mail' options at Administer > Configuration > Web Services > Newsletters > Settings > Send mail.
 
-    Enable new content types to use as newsletter:
-      Structure > edit content type > Publishing options
+3. (UN)SUBSCRIBE CONFIRMATION
 
-    Add and configure newsletter categories:
-      Structure > Web Services > Newsletters > Add newsletter category
-      Structure > Web Services > Newsletters > edit newsletter category
+By default the unsubscribe link will direct the user to a confirmation page. Upon confirmation the user is directed to the home page, where a message will be displayed. On the Simplenews subscription admin page you can specify an alternative destination page: Configuration > Web Services > Newsletters > edit newsletter category > Subscription settings
 
- 5. ENABLE SIMPLENEWS BLOCK
+To skip the confirmation page you can add parameters to the subscription URL.
+  Example: [simplenews-subscribe-url]/ok
 
-    With the Simplenews block users can subscribe to a newsletter.
+When an alternative destination page has been defined the extra parameters will be added to the destination URL.
+  Example: [simplenews-subscriber:subscribe-url]/ok
+  Destination: node/123
+  Destination URL: node/123/ok
 
-    Enable a Simplenews block per Newsletter category:
-      Structure > Newsletters > edit newsletter category
+4. SINGLE OR DOUBLE OPT-IN AND OPT-OUT
 
- 6. CONFIGURE SIMPLENEWS BLOCK
+Every newsletter can be set to be double opt-in/out (default), single opt-in/out, or hidden.
 
-    Configure the Simplenews block on the Block configuration page. You reach
-    this page from Block admin page (Structure > Blocks).
-    Click the 'Configure' link of the appropriate simplenews block.
+  Double: A confirmation email is sent to confirm the (un)subscribe action. No confirmation is sent when a user is (un)subscribed by the administrator or when the user subscribes when creating an account.
+  Single: No confirmation email is sent. (un)subscribe is immediately.
+  Hidden: The newsletter is not listed in newsletter lists. Use this for mandatory newsletters. Only administrators or modules can add a user to this mailing list.
 
-    Permission "subscribe to newsletters" is required to view the subscription
-    form in the simplenews block or to view the link to the subscription form.
+Note that single opt-in/out or hidden (forced) subscription is in some countries forbidden by law.
 
- 7. SIMPLENEWS BLOCK THEMING
+SECURITY NOTICE: a newsletter set to be single opt-in or opt-out is vulnerable to Cross Site Request Forgeries. Email addresses may be (un)subscribed without a notice. Do not use this setting in uncontrolled environments (like the internet!).
 
-    More control over the content of simplenews blocks can be achieved using
-    the block theming. Theme your simplenews block by copying
-    simplenews-block.tpl.php into your theme directory and edit the content.
-    The file is self documented listing all available variables.
+5. TIPS
 
-    The newsletter block can be themed generally and per newsletter:
-      simplenews-block.tpl.php (for all newsletters)
-      simplenews-block.tpl--[tid].php (for newsletter series tid)
+* A subscription page is available at: /newsletter/subscriptions
 
- 8. MULTILINGUAL SUPPORT
+* The Elysia Cron module (https://backdropcms.org/project/elysia_cron) can be used to start the simplenews cron hook more often than others, so that newsletter are sent faster without decreasing site performance due to long-running cron hooks.
 
-    Simplenews supports multilingual newsletters for node translation,
-    multilingual taxonomy and url path prefixes.
 
-    When translated newsletter issues are available subscribers receive the
-    newsletter in their preferred language (according to account setting).
-    Translation module is required for newsletter translation.
+Related modules
+------------
 
-    Multilingual taxonomy of 'Localized terms' and 'per language terms' is
-    supported. 'per language vocabulary' is not supported.
-    I18n-taxonomy module is required.
-    Use 'Localized terms' for a multilingual newsletter. Taxonomy terms are
-    translated and translated newsletters are each tagged with the same
-    (translated) term. Subscribers receive the newsletter in the preferred
-    language set in their account settings or in the site default language.
-    Use 'per language terms' for mailing lists each with a different language.
-    Newsletters of different language each have their own tag and own list of
-    subscribers.
+ * Elysia Cron
+   Allows fine grained control over cron tasks.
+   https://backdropcms.org/project/elysia_cron
+ * Mailsystem
+   Extends drupal core mailystem wirh Administrative UI and Developers API.
+   https://backdropcms.org/project/mailsystem
+ * Maillog
+   Captures outgoing mails, helps users debugging simplenews.
+   https://backdropcms.org/project/maillog
 
-    Path prefixes are added to footer message according to the subscribers
-    preferred language.
 
-    The preferred language of anonymous users is set based on the interface
-    language of the page they visit for subscription. Anonymous users can NOT
-    change their preferred language. Users with an account on the site will be
-    subscribed with the preferred language as set in their account settings.
-
-    The confirmation mails can be translated by enableding the Simplenews
-    variables at:
-      Home > Administration > Configuration > Regional and language > Multilingual settings > Variables
-    Afterwards, the mail subject and body can be entered for every enabled
-    language.
-
-9.  NEWSLETTER THEMING
-
-    You can customize the theming of newsletters. Copy any of the *.tpl.php
-    files from the simplenews module directory to your theme directory. Both
-    general and by-newsletter theming can be performed.
-    Theme newsletter body:
-      simplenews-newsletter-body.tpl.php (for all newsletters)
-      simplenews-newsletter-body--[tid].tpl.php
-      simplenews-newsletter-body--[view mode].tpl.php
-      simplenews-newsletter-body--[tid]--[view mode].tpl.php
-
-      [tid]: Machine readable name of the newsletter category
-      [view mode]: 'email-plain', 'email-html', 'email-textalt'
-      Example:
-        simplenews-newsletter-body--1--email-plain.tpl.php
-
-    Theme newsletter footer:
-      simplenews-newsletter-footer.tpl.php (for all newsletters)
-      simplenews-newsletter-footer--[tid].tpl.php
-      simplenews-newsletter-footer--[view mode].tpl.php
-      simplenews-newsletter-footer--[tid]--[view mode].tpl.php
-
-      [tid]: Machine readable name of the newsletter category
-      [view mode]: 'email-plain', 'email-html', 'email-textalt'
-      Example:
-        simplenews-newsletter-footer--1--email-plain.tpl.php
-
-    The template files are self documented listing all available variables.
-    Depending on how the mails are sent (e.g. how cron is triggered), either the
-    default or the admin theme might be used, if one has been configured.
-    To prevent this, Simplenews supports the mail theme setting from the
-    mailsystem module (http://drupal.org/project/mailsystem). Install it, choose
-    the mail theme and the newsletter templates from that theme will be used no
-    matter which other themes are enabled.
-
-    Using the fields Display settings each field of a simplenews newsletter can
-    be displayed or hidden in 'plain text', 'HTML' and 'HTML text alternative'
-    format. You find these settings at:
-      Structure > Content types > Manage display
-    Enable the view modes you want to configure and configure their display.
-
-10. SEND MAILING LISTS
-
-    Cron is required to send large mailing lists.
-    If you have a medium or large size mailing list (i.e. more than 500
-    subscribers) always use cron to send the newsletters.
-
-    To use cron:
-     * Check the 'Use cron to send newsletters' checkbox.
-     * Set the 'Cron throttle' to the number of newsletters send per cron run.
-       Too high values may lead to mail server overload or you may hit hosting
-       restrictions. Contact your host.
-
-    Don't use cron:
-     * Uncheck the 'Use cron to send newsletters' checkbox.
-       All newsletters will be sent immediately when saving the node. If not
-       all emails can be sent within the available php execution time, the
-       remainder will be sent by cron. Therefore ALWAYS enable cron.
-
-    These settings are found on the Newsletter Settings page under
-    'Send mail' options at:
-      Administer > Configuration > Web Services > Newsletters > Settings > Send mail.
-
-11. (UN)SUBSCRIBE CONFIRMATION
-
-    By default the unsubscribe link will direct the user to a confirmation page.
-    Upon confirmation the user is directed to the home page, where a message
-    will be displayed. On the Simplenews subscription admin page you can
-    specify an alternative destination page.
-      Structure > Configuration > Web Services > Newsletters > edit newsletter category > Subscription settings
-
-    To skip the confirmation page you can add parameters to the subscription URL.
-      Example: [simplenews-subscribe-url]/ok
-    When an alternative destination page has been defined the extra parameters
-    will be added to the destination URL.
-      Example: [simplenews-subscriber:subscribe-url]/ok
-      Destination: node/123
-      Destination URL: node/123/ok
-
- 12. SINGLE OR DOUBLE OPT-IN AND OPT-OUT
-
-    Every newsletter can be set to be double opt-in/out (default), single
-    opt-in/out, or hidden.
-
-    Double: A confirmation email is sent to confirm the (un)subscribe action.
-            No confirmation is sent when a user is (un)subscribed by the
-            administrator or when the user subscribes when creating an account.
-    Single: No confirmation email is sent. (un)subscribe is immediately.
-    Hidden: The newsletter is not listed in newsletter lists. Use this for
-    mandatory newsletters. Only administrators or modules can add a user to this
-    mailing list.
-
-    Note that single opt-in/out or hidden (forced) subscription is in some
-    countries forbidden by law.
-
-    SECURITY NOTICE: a newsletter set to be single opt-in or opt-out is
-    vulnerable to Cross Site Request Forgeries. Email addresses may be
-    (un)subscribed without a notice. Do not use this setting in uncontrolled
-    environments (like the internet!).
-
- 13. TIPS
-    A subscription page is available at: /newsletter/subscriptions
-
-    The Elysia Cron module can be used
-    to start the simplenews cron hook more often than others, so that newsletter
-    are sent faster without decreasing site performance due to long-running cron
-    hooks.
-
-    If your unsubscribe URL looks like:
-      http://newsletter/confirm/remove/8acd182182615t632
-    instead of:
-      http://www.example.com/newsletter/confirm/remove/8acd182182615t632
-    You should change the base URL in the settings.php file from
-      #  $base_url = 'http://www.example.com';  // NO trailing slash!
-    to
-      $base_url = 'http://www.example.com';  // NO trailing slash!
-
-LICENSE
+License
 -------
-
 This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
 
-CREDITS
------------
+Credits
+-------
 
 This module is based on the Simplenews module for Drupal, originally written and maintained by a large number of contributors, including:
 
-Berdir <https://www.drupal.org/u/berdir>
-miro_dietiker <https://www.drupal.org/u/miro_dietiker>
-Simon Georges <https://www.drupal.org/u/simon-georges>
-Sutharsan <https://www.drupal.org/u/sutharsan>
-AlexisWilke <https://www.drupal.org/u/alexiswilke>
+Berdir https://www.drupal.org/u/berdir
+miro_dietiker https://www.drupal.org/u/miro_dietiker
+Simon Georges https://www.drupal.org/u/simon-georges
+Sutharsan https://www.drupal.org/u/sutharsan
+AlexisWilke https://www.drupal.org/u/alexiswilke
 
-MAINTAINERS
------------
+Current maintainers
+-------------------
 
-- seeking
+Simplenews is ported and supported by Backdrop Afficionados at AltaGrade (https://www.altagrade.com):
 
-Ported to Backdrop by:
-
- - biolithic <https://github.com/biolithic>
+* Alan Mels (https://github.com/alanmels)
+* Alex Shapka (https://github.com/alexshapka)
+* Nick Onom (https://github.com/nickonom)

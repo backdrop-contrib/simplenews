@@ -246,7 +246,7 @@ function simplenews_schema() {
       'tid' => array(
         'table' => 'simplenews_category',
         'columns' => array('tid' => 'tid'),
-      )
+      ),
     ),
     // @todo add foreign keys to other tables too?
   );
@@ -346,18 +346,63 @@ function simplenews_schema() {
  * Implements hook_install().
  */
 function simplenews_install() {
+
+  // Set default e-mail address for "From" and "To" fields.
+  if (!empty($email = config_get('system.core', 'site_mail'))) {
+    config_set('simplenews.settings', 'simplenews_from_address', $email);
+    config_set('simplenews.settings', 'simplenews_test_address', $email);
+  }
+  elseif (!empty($email = ini_get('sendmail_from'))) {
+    // This is not alway reliable as https://www.php.net/manual/en/mail.configuration.php
+    // shows the default for `sendmail_from` is  NULL.
+    config_set('simplenews.settings', 'simplenews_from_address', $email);
+    config_set('simplenews.settings', 'simplenews_test_address', $email);
+  }
+  else {
+    // As the last resort, there is no chance $user->init returns empty.
+    $user = user_load('1');
+    config_set('simplenews.settings', 'simplenews_from_address', $user->init);
+
+  }
+
+  config_set('simplenews.settings', 'simplenews_from_name', config_get('system.core', 'site_name'));
+  config_set('simplenews.settings', 'simplenews_format', "plain");
+  config_set('simplenews.settings', 'simplenews_priority', SIMPLENEWS_PRIORITY_NONE);
+  config_set('simplenews.settings', 'simplenews_send', 0);
+  config_set('simplenews.settings', 'simplenews_use_cron',  TRUE);
+  config_set('simplenews.settings', 'simplenews_source_cache', "SimplenewsSourceCacheBuild");
+  config_set('simplenews.settings', 'simplenews_throttle', "20");
+  config_set('simplenews.settings', 'simplenews_debug', FALSE);
+  config_set('simplenews.settings', 'simplenews_sync_account', TRUE);
+  config_set('simplenews.settings', 'simplenews_use_combined', "multiple");
+  config_set('simplenews.settings', 'simplenews_spool_progress_expiration', "3600");
+  config_set('simplenews.settings', 'simplenews_source', "SimplenewsSourceNode");
+  config_set('simplenews.settings', 'simplenews_private_key', FALSE);
+  config_set('simplenews.settings', 'simplenews_category_field', 'field_simplenews_term');
+  config_set('simplenews.settings', 'simplenews_block_message_multiple', st('Select the newsletter(s) to which you want to subscribe or unsubscribe.'));
+  config_set('simplenews.settings', 'simplenews_block_message', "Stay informed on our latest news!");
+  config_set('simplenews.settings', 'simplenews_block_interface', 1);
+  config_set('simplenews.settings', 'simplenews_block_link', TRUE);
+  config_set('simplenews.settings', 'simplenews_block_previous', FALSE);
+  config_set('simplenews.settings', 'simplenews_block_quantity', 5);
+  config_set('simplenews.settings', 'simplenews_block_rss', TRUE);
+
   _simplenews_init_simplenews_vocabulary();
   _simplenews_init_simplenews_category();
-
-  // add nodetype with newsletter vocabulary
   _simplenews_install_nodetype();
+
 }
 
 /**
  * Implements hook_uninstall().
  */
 function simplenews_uninstall() {
-  db_query("DELETE FROM {variable} WHERE name LIKE 'simplenews_%%'");
+  // Remove Simplenews database tables.
+  if (taxonomy_vocabulary_load('newsletter')) {
+    taxonomy_vocabulary_delete('newsletter');
+  }
+  // Remove Simplenews configuration file.
+  config('simplenews.settings')->delete();
 }
 
 /**
@@ -375,7 +420,7 @@ function _simplenews_install_nodetype() {
       'locked' => 0,
       'custom' => 1,
       'modified' => 1,
-      ));
+    ));
     node_type_save($type);
     node_add_body_field($type);
   }
@@ -389,28 +434,31 @@ function _simplenews_install_nodetype() {
  * Create simplenews vocabulary and initial term.
  */
 function _simplenews_init_simplenews_vocabulary() {
-  // Create the simplenews vocabulary. If it exists, set simplenews_vid variable.
+  $config = config('simplenews.settings');
+  // Create the simplenews vocabulary. If it exists, set simplenews_machine_name variable.
   $vocabularies = taxonomy_vocabulary_load_multiple(array(), array('machine_name' => 'newsletter'));
   $vocabulary = reset($vocabularies);
   if (!$vocabulary) {
-    $vocabulary = new stdClass();
-    $vocabulary->name         = t('Newsletter');
-    $vocabulary->machine_name = 'newsletter';
-    $vocabulary->description  = t('Simplenews newsletter categories.');
-    $vocabulary->weight       = '0';
-    $vocabulary->hierarchy    = '0';
-    $vocabulary->module       = 'simplenews';
+    $vocabulary = new TaxonomyVocabulary(array(
+    'name' => t('Newsletter'),
+    'description' => t('Simplenews newsletter categories.'),
+    'machine_name' => 'newsletter',
+    'help' => '',
+    'nodes' => array('simplenews' => 'simplenews'),
+  ));
   }
   taxonomy_vocabulary_save($vocabulary);
-  config_set('simplenews.settings', 'simplenews_vid', $vocabulary->vid);
+  config_set('simplenews.settings', 'simplenews_machine_name', $vocabulary->machine_name);
 
   // Create a newsletter taxonomy term if none exists.
-  $tree = taxonomy_get_tree($vocabulary->vid);
+  $tree = taxonomy_get_tree($vocabulary->machine_name);
   if (count($tree) == 0) {
-    $term = new stdClass();
-    $term->name = t('@site_name newsletter', array('@site_name' => config_get('system.core', 'site_name')));
-    $term->description = t('@site_name newsletter categories.', array('@site_name' => config_get('system.core', 'site_name')));
-    $term->vid = $vocabulary->vid;
+    $term = entity_create('taxonomy_term', array(
+      'name' => t('@site_name newsletter', array('@site_name' => config_get('system.core', 'site_name'))),
+      'vocabulary' => $vocabulary->machine_name,
+      'description' => t('@site_name newsletter categories.', array('@site_name' => config_get('system.core', 'site_name'))),
+      'format' => 'plain',
+    ));
     taxonomy_term_save($term);
   }
 }
@@ -419,7 +467,8 @@ function _simplenews_init_simplenews_vocabulary() {
  * Create initial simplenews categories.
  */
 function _simplenews_init_simplenews_category() {
-  if ($tree = taxonomy_get_tree(config_get('simplenews.settings', 'simplenews_vid'))) {
+  $config = config('simplenews.settings');
+  if ($tree = taxonomy_get_tree($config->get('simplenews_machine_name'))) {
     $categories = simplenews_categories_load_multiple();
     $first = TRUE;
     foreach ($tree as $term) {
@@ -429,7 +478,7 @@ function _simplenews_init_simplenews_category() {
         $category->tid = $term->tid;
         // @todo use a function for category default values
         $category->from_name      = config_get('system.core', 'site_name');
-        $category->email_subject  ='[[simplenews-category:name]] [node:title]';
+        $category->email_subject  = '[[simplenews-category:name]] [node:title]';
         $category->from_address   = config_get('system.core', 'site_mail');
         $category->format         = 'plain';
         $category->priority       = SIMPLENEWS_PRIORITY_NONE;
@@ -446,521 +495,4 @@ function _simplenews_init_simplenews_category() {
       }
     }
   }
-}
-
-/**
- * Helper function to get all activated simplenews blocks
- *
- * @return Keyed array of simplenews blocks.
- */
-function _simplenews_get_blocks() {
-  $query = db_select('block', 'b');
-  $result = $query
-    ->fields('b', array('delta'))
-    ->condition('b.status', 1)
-    ->condition('b.module', 'simplenews')
-    ->execute();
-  return $result->fetchAllAssoc('delta');
-}
-
-/**
- * Implements hook_update_last_removed().
- */
-function simplenews_update_last_removed() {
-  // Support upgrades from 6.x-1.x and 6.x-2.x.
-  return 6101;
-}
-
-/**
- * Implements hook_update_dependencies().
- */
-function simplenews_update_dependencies() {
-  // Make sure that the taxonomy upgrade is run first.
-  $dependencies['simplenews'][7000] = array(
-    'taxonomy' => 7010,
-  );
-  return $dependencies;
-}
-
-/**
- * Helper function to convert tokens in variables to D7 format.
- */
-function _simplenews_convert_tokens_in_variable($variables) {
-  if (!is_array($variables)) {
-    $variables = array($variables);
-  }
-
-  $old = array('[site-name]', '[user-mail]', '[site-url]/user', '[site-url]', '[simplenews-subscribe-url]', '[simplenews-unsubscribe-url]', '[simplenews-newsletter-url]', '[simplenews-newsletters-name]', '[simplenews-newsletters-url]', '[simplenews-receiver-mail]');
-  $new = array('[site:name]', '[user:mail]', '[site:login-url]', '[site:url]', '[simplenews-subscriber:subscribe-url]', '[simplenews-subscriber:unsubscribe-url]', '[simplenews-newsletter:url]', '[simplenews-list:name]', '[simplenews-list:url]', '[simplenews-subscriber:mail]');
-
-  foreach ($variables as $variable) {
-    if ($text = config_get('simplenews.settings', $variable)) {
-      $text = str_replace($old, $new, $text);
-      config_set('simplenews.settings', $variable, $text);
-    }
-  }
-}
-
-/**
- * Create table {simplenews_category} to replace taxonomy terms.
- * Migrate Newsletter taxonomy data to Newsletter categories.
- *
- * Rename table simplenews_subscriptions to simplenews_subscriber.
- * Rename table simplenews_newsletters to simplenews_newsletter.
- * Drop fields {simplenews_newsletter}.s_format, .priority and .receipt.
- *
- * Rename table simplenews_snid_tid to simplenews_subscription.
- *
- * Delete deprecated simplenews variables.
- */
-function simplenews_update_7000() {
-
-  // Convert tokens in variables to D7 format.
-  $variables = array('simplenews_confirm_subscribe_subject', 'simplenews_confirm_subscribe_unsubscribed', 'simplenews_confirm_subscribe_subscribed', 'simplenews_confirm_unsubscribe_subscribed', 'simplenews_confirm_unsubscribe_unsubscribed');
-  _simplenews_convert_tokens_in_variable($variables);
-
-  // Create table 'simplenews_category'.
-  $schema['simplenews_category'] = array(
-    'description' => 'Simplenews newsletter categories.',
-    'fields' => array(
-      'tid' => array(
-        'description' => '{taxonomy_term_data}.tid used as newsletter category.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'format' => array(
-        'description' => 'Format of the newsletter email (plain, html).',
-        'type' => 'varchar',
-        'length' => 8,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'priority' => array(
-        'description' => 'Email priority according to RFC 2156 and RFC 5231 (0 = none; 1 = highest; 2 = high; 3 = normal; 4 = low; 5 = lowest).',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'size' => 'tiny',
-      ),
-      'receipt' => array(
-        'description' => 'Boolean indicating request for email receipt confirmation according to RFC 2822.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'size' => 'tiny',
-      ),
-      'from_name' => array(
-        'description' => 'Sender name for newsletter emails.',
-        'type' => 'varchar',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'email_subject' => array(
-        'description' => 'Subject of newsletter email. May contain tokens.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'from_address' => array(
-        'description' => 'Sender address for newsletter emails',
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'hyperlinks' => array(
-        'description' => 'Flag indicating type of hyperlink conversion (1 = hyperlinks are in-line; 0 = hyperlinks are placed at email bottom).',
-        'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'new_account' => array(
-        'description' => 'How to treat subscription at account creation (none = None; on = Default on; off = Default off; silent = Invisible subscription).',
-        'type' => 'varchar',
-        'length' => 12,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'opt_inout' => array(
-        'description' => 'How to treat subscription confirmation (hidden = Newsletter is hidden from the user; single = Single opt-in; double = Double opt-in).',
-        'type' => 'varchar',
-        'length' => 12,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'block' => array(
-        'description' => 'For this category a subscription block is available.',
-        'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('tid'),
-  );
-  db_create_table('simplenews_category', $schema['simplenews_category']);
-
-  // Migrate Newsletter taxonomy data to Newsletter categories.
-  // Query the database directly, to avoid triggering our own hooks.
-  $tids = db_query('SELECT tid FROM {taxonomy_term_data} where vid = :vid', array(':vid' => config_get('simplenews.settings', 'simplenews_vid')))->fetchCol();
-  // @todo Check if simplenews blocks are still active after core update.
-  //      If not, there is no purpose in migrating the block status ('block' => 0).
-  $blocks = _simplenews_get_blocks();
-  foreach ($tids as $tid) {
-    _simplenews_convert_tokens_in_variable('simplenews_email_subject_' . $tid);
-
-    // check string lengths: variables can be an arbitrary length but the new table has limits
-    $from_name = config_get('simplenews.settings', 'simplenews_from_name_' . $tid);
-    $email_subject = config_get('simplenews.settings', 'simplenews_email_subject_' . $tid);
-    $from_address = config_get('simplenews.settings', 'simplenews_from_address_' . $tid);
-    if (strlen($from_name) > 128) {
-      drupal_set_message(t('The from_name field for simplenews list @tid (@value) was too long and has been truncated to 128 characters.',
-            array('@tid' => $tid, '@value' => $from_name)), 'warning');
-      $from_name = substr($from_name, 0, 128);
-    }
-    if (strlen($email_subject) > 255) {
-      drupal_set_message(t('The email_subject field for simplenews list @tid (@value) was too long and has been truncated to 255 characters.',
-            array('@tid' => $tid, '@value' => $email_subject)), 'warning');
-      $from_name = substr($email_subject, 0, 255);
-    }
-    if (strlen($from_address) > 64) {
-      drupal_set_message(t('The from_address field for simplenews list @tid (@value) was too long and has been truncated to 64 characters.',
-            array('@tid' => $tid, '@value' => $from_address)), 'warning');
-      $from_name = substr($from_address, 0, 64);
-    }
-
-    db_insert('simplenews_category')
-      ->fields(array(
-        'tid' => $tid,
-        'format' => 'plain',
-        'priority' => '0',
-        'receipt' => '0',
-        'from_name' => $from_name,
-        'email_subject' => $email_subject,
-        'from_address' => $from_address,
-        'hyperlinks' => config_get('simplenews.settings', 'simplenews_hyperlinks_' . $tid),
-        'new_account' => config_get('simplenews.settings', 'simplenews_new_account_' . $tid),
-        'opt_inout' => config_get('simplenews.settings', 'simplenews_opt_inout_' . $tid),
-        'block' => isset($blocks[$tid]) ? 1 : 0,
-      ))
-      ->execute();
-  }
-
-  // Change table simplenews_subscriptions to simplenews_subscriber.
-  db_rename_table('simplenews_subscriptions', 'simplenews_subscriber');
-
-  // Change table simplenews_newsletters to simplenews_newsletter.
-  // Drop fields: s_format, priority, receipt (moved to simplenews_category).
-  db_rename_table('simplenews_newsletters', 'simplenews_newsletter');
-  db_change_field('simplenews_newsletter', 'tid', 'tid', array(
-    'description' => 'The newsletter category {simplenews_category}.tid this newsletter belongs to.',
-    'type' => 'int',
-    'not null' => TRUE,
-    'default' => 0,
-  ));
-  db_drop_field('simplenews_newsletter', 's_format');
-  db_drop_field('simplenews_newsletter', 'priority');
-  db_drop_field('simplenews_newsletter', 'receipt');
-
-  // Change table simplenews_snid_tid to simplenews_subscription.
-  // Change field {simplenews_subscription}.tid description
-  db_drop_primary_key('simplenews_snid_tid');
-  db_rename_table('simplenews_snid_tid', 'simplenews_subscription');
-
-  // Add {simplenews_mail_spool}.data to store subscriber data.
-  db_add_field('simplenews_mail_spool', 'data', array(
-    'type' => 'text',
-    'not null' => FALSE,
-    'size' => 'big',
-    'serialize' => TRUE,
-    'description' => 'A serialized array of name value pairs that are related to the email address.',
-  ));
-
-  // Rename field {simplenews_mail_spool}.s_status to "status".
-  db_change_field('simplenews_newsletter', 's_status', 'status', array(
-    'description' => 'sent status of the newsletter issue (0 = not sent; 1 = pending; 2 = sent). ',
-    'type' => 'int',
-    'size' => 'tiny',
-    'not null' => TRUE,
-    'default' => 0,
-  ));
-
-  // Delete deprecated variables.
-  foreach ($tids as $tid) {
-    variable_del('simplenews_from_name_' . $tid);
-    variable_del('simplenews_email_subject_' . $tid);
-    variable_del('simplenews_from_address_' . $tid);
-    variable_del('simplenews_hyperlinks_' . $tid);
-    variable_del('simplenews_new_account_' . $tid);
-    variable_del('simplenews_opt_inout_' . $tid);
-  }
-
-
-
-  // @todo Add return text about checking of Newsletter Category settings.
-  // @todo Add return text about Block checkboxes
-
-  // Convert old content type settings.
-  module_load_include('module', 'node');
-  module_load_include('module', 'simplenews');
-
-  // Update the machine name of the simplenews vocabulary.
-  if ($vid = config_get('simplenews.settings', 'simplenews_vid')) {
-    db_update('taxonomy_vocabulary')
-      ->fields(array(
-        'machine_name' => 'newsletter',
-      ))
-      ->condition('vid', $vid)
-      ->execute();
-    $field_name = 'taxonomy_vocabulary_' . $vid;
-    config_set('simplenews.settings', 'simplenews_category_field', $field_name);
-    $field = field_info_field($field_name);
-    $field['settings']['allowed_values'][0]['vocabulary'] = 'newsletter';
-    field_update_field($field);
-  }
-  variable_del('simplenews_vid');
-
-  $content_types = config_get('simplenews.settings', 'simplenews_content_types');
-  if (!empty($content_types)) {
-    foreach ($content_types as $simplenews_content_type) {
-      config_set('simplenews.settings', 'simplenews_content_type_' . $simplenews_content_type, TRUE);
-    }
-  }
-  variable_del('simplenews_content_types');
-}
-
-/**
- * Create key snid_tid on simplenews_mail_spool table.
- */
-function simplenews_update_7001() {
-  // Add the {simplenews_mail_spool}.snid field if it doesn't exist yet (added
-  // in 6.x-2.x).
-  if (!db_field_exists('simplenews_mail_spool', 'snid')) {
-    db_add_field('simplenews_mail_spool', 'snid', array(
-      'description' => 'Foreign key for subscriber table ({simplenews_subscriptions}.snid)',
-      'type' => 'int',
-      'not null' => TRUE,
-      'default' => 0,
-    ));
-  }
-
-  if (!db_index_exists('simplenews_mail_spool', 'snid_tid')) {
-    db_add_index('simplenews_mail_spool', 'snid_tid', array('snid', 'tid'));
-  }
-}
-
-/**
- * Drop support for node revisioning.
- */
-function simplenews_update_7002() {
-  if (db_field_exists('simplenews_newsletter', 'vid')) {
-    db_drop_field('simplenews_newsletter', 'vid');
-  }
-  if (db_field_exists('simplenews_mail_spool', 'vid')) {
-    db_drop_field('simplenews_mail_spool', 'vid');
-  }
-}
-
-/**
- * [simplenews-newsletter] tokens have been removed in favor of [node] tokens.
- */
-function simplenews_update_7003() {
-  drupal_set_message(t('The [simplenews-newsletter] tokens have been removed in favor of [node] tokens. Existing newsletters might need to be updated accordingly.'), 'warning');
-}
-
-/**
- * Add the status field to {simplenews_subscription}.
- */
-function simplenews_update_7004() {
-  if (!db_field_exists('simplenews_subscription', 'status')) {
-    db_add_field('simplenews_subscription', 'status', array(
-      'description' => 'A flag indicating whether the user is subscribed (1) or unsubscribed (0).',
-      'type' => 'int',
-      'size' => 'small',
-      'not null' => TRUE,
-      'default' => 1
-      )
-    );
-  }
-}
-
-/**
- * Add support for combined confirmation mails.
- */
-function simplenews_update_7005() {
-  db_add_field('simplenews_subscriber', 'changes', array(
-    'description' => 'Contains the requested subscription changes',
-    'type' => 'text',
-    'serialize' => TRUE,
-  ));
-  // To keep existing installations consistent, disable combined confirmation
-  // mails.
-  config_set('simplenews.settings', 'simplenews_use_combined', 'never');
-}
-
-/**
- * Add support for subscriber create date
- */
-function simplenews_update_7006() {
-
-  db_add_field('simplenews_subscriber', 'created', array(
-    'description' => 'UNIX timestamp of when the subscription record was added.',
-    'type' => 'int',
-    'unsigned' => TRUE,
-    'not null' => TRUE,
-    'default' => 0,
-  ));
-}
-
-/**
- * Allow longer from_name field values.
- */
-function simplenews_update_7007() {
-
-  db_change_field('simplenews_category', 'from_name', 'from_name', array(
-    'type' => 'varchar',
-    'length' => 128,
-    'not null' => TRUE,
-    'default' => '',
-    'description' => 'Sender name for newsletter emails.',
-  ));
-}
-
-/**
- * Add the timestamp and source columns to {simplenews_subscription} if missing.
- */
-function simplenews_update_7008() {
-  if (!db_field_exists('simplenews_subscription', 'timestamp')) {
-    db_add_field('simplenews_subscription', 'timestamp', array(
-      'description' => 'UNIX timestamp of when the user is (un)subscribed.',
-      'type' => 'int',
-      'unsigned' => TRUE,
-      'not null' => TRUE,
-      'default' => 0,
-    ));
-  }
-  if (!db_field_exists('simplenews_subscription', 'source')) {
-    db_add_field('simplenews_subscription', 'source', array(
-      'description' => 'The source via which the user is (un)subscription.',
-      'type' => 'varchar',
-      'length' => 24,
-      'not null' => TRUE,
-      'default' => '',
-    ));
-  }
-}
-
-/**
- * Add the sent_subsriber_countcolumn to {simplenews_newsletter} if missing.
- */
-function simplenews_update_7009() {
-  if (!db_field_exists('simplenews_newsletter', 'sent_subscriber_count')) {
-    db_add_field('simplenews_newsletter', 'sent_subscriber_count', array(
-      'description' => 'The count of subscribers to the newsletter when it was sent.',
-      'type' => 'int',
-      'not null' => TRUE,
-      'default' => 0,
-    ));
-  }
-}
-
-/**
- * Update empty sent subscriber count column to current subscriber count.
- */
-function simplenews_update_7010() {
-  // Assume that already sent newsletters that have a sent subscriber count of
-  // 0 have been sent to all subscribers. Do a update query per newsletter
-  // category, to avoid having to re-execute the subquery on every row.
-  $tids = db_query('SELECT tid FROM {simplenews_category}')->fetchCol();
-  foreach ($tids as $tid) {
-    $count = db_query('SELECT COUNT(*) FROM {simplenews_subscription} ss WHERE status = 1 AND tid = :tid', array(':tid' => $tid))->fetchField();
-    db_update('simplenews_newsletter')
-      ->fields(array(
-        'sent_subscriber_count' => $count,
-      ))
-      // 2 equals SIMPLENEWS_STATUS_SEND_READY.
-      ->condition('status', 2)
-      ->condition('sent_subscriber_count', 0)
-      ->condition('tid', $tid)
-      ->execute();
-  }
-}
-
-
-
-
-
-
-function simplenews_update_1000() {
-  $config = config('simplenews.settings');
-
-  // migrate variables
-  $config->set('simplenews_vid', update_variable_get('simplenews_vid'));
-  $config->set('simplenews_category_field', update_variable_get('simplenews_category_field'));
-  $config->set('simplenews_use_combined', update_variable_get('simplenews_use_combined'));
-  $config->set('simplenews_block_m_multiple', update_variable_get('simplenews_block_m_multiple'));
-  $config->set('simplenews_private_key', update_variable_get('simplenews_private_key'));
-
-  $config->set('simplenews_last_cron', update_variable_get('simplenews_last_cron'));
-  $config->set('simplenews_last_sent', update_variable_get('simplenews_last_sent'));
-  $config->set('simplenews_use_cron', update_variable_get('simplenews_use_cron'));
-  $config->set('simplenews_throttle', update_variable_get('simplenews_throttle'));
-  $config->set('simplenews_spool_progress_expiration', update_variable_get('simplenews_spool_progress_expiration'));
-
-  $config->set('simplenews_spool_expire', update_variable_get('simplenews_spool_expire'));
-  $config->set('simplenews_content_types', update_variable_get('simplenews_content_types'));
-  $config->set('simplenews_sync_account', update_variable_get('simplenews_sync_account'));
-  $config->set('simplenews_debug', update_variable_get('simplenews_debug'));
-  $config->set('simplenews_format', update_variable_get('simplenews_format'));
-  
-  $config->set('simplenews_priority', update_variable_get('simplenews_priority'));
-  $config->set('simplenews_receipt', update_variable_get('simplenews_receipt'));
-  $config->set('simplenews_from_name', update_variable_get('simplenews_from_name'));
-  $config->set('simplenews_send', update_variable_get('simplenews_send'));
-  $config->set('simplenews_test_address', update_variable_get('simplenews_test_address'));
-  
-  
-  $config->set('simplenews_test_address_override', update_variable_get('simplenews_test_address_override'));
-  $config->set('simplenews_from_address', update_variable_get('simplenews_from_address'));
-  $config->set('simplenews_source_cache', update_variable_get('simplenews_source_cache'));
-  $config->set('simplenews_confirm_subscribe_page', update_variable_get('simplenews_confirm_subscribe_page'));
-  $config->set('simplenews_confirm_unsubscribe_page', update_variable_get('simplenews_confirm_unsubscribe_page'));
-  $config->save();
-
-  // Delete variables.
-  update_variable_del('simplenews_vid');
-  update_variable_del('simplenews_category_field');
-  update_variable_del('simplenews_use_combined');
-  update_variable_del('simplenews_block_m_multiple');
-  update_variable_del('simplenews_private_key');
-
-  update_variable_del('simplenews_last_cron');
-  update_variable_del('simplenews_last_sent');
-  update_variable_del('simplenews_use_cron');
-  update_variable_del('simplenews_throttle');
-  update_variable_del('simplenews_spool_progress_expiration');
-
-  update_variable_del('simplenews_spool_expire');
-  update_variable_del('simplenews_content_types');
-  update_variable_del('simplenews_sync_account');
-  update_variable_del('simplenews_debug');
-  update_variable_del('simplenews_format');
-  
-  update_variable_del('simplenews_priority');
-  update_variable_del('simplenews_receipt');
-  update_variable_del('simplenews_from_name');
-  update_variable_del('simplenews_send');
-  update_variable_del('simplenews_test_address');
-  
-  update_variable_del('simplenews_test_address_override');
-  update_variable_del('simplenews_from_address');
-  update_variable_del('simplenews_source_cache');
-  update_variable_del('simplenews_confirm_subscribe_page');
-  update_variable_del('simplenews_confirm_unsubscribe_page');
 }

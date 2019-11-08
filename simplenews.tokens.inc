@@ -81,7 +81,7 @@ function simplenews_tokens($type, $tokens, $data = array(), $options = array()) 
   $sanitize = !empty($options['sanitize']);
   if (isset($options['language'])) {
     $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
+    $language_code = $options['language']->langcode;
   }
   else {
     $language_code = NULL;
@@ -94,7 +94,7 @@ function simplenews_tokens($type, $tokens, $data = array(), $options = array()) 
       }
       $subscriber = $data['simplenews_subscriber'];
       $category = isset($data['category']) ? $data['category'] : NULL;
-      $language = isset($subscriber->language->language) ? $subscriber->language : user_preferred_language($subscriber);
+      $language = isset($subscriber->langcode->langcode) ? $subscriber->langcode : user_preferred_language($subscriber);
 
       // Build hash for the URL of the (un)subscribe confirmation page.
       $hash = '';
