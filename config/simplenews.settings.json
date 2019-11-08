@@ -1,9 +1,7 @@
 {
     "_config_name": "simplenews.settings",
-    "simplenews_from_address": "",
-    "simplenews_from_name": "",
     "simplenews_format": "plain",
-    "simplenews_priority": "0",
+    "simplenews_priority": 0,
     "simplenews_send": 0,
     "simplenews_use_cron": true,
     "simplenews_source_cache": "SimplenewsSourceCacheBuild",
@@ -23,6 +21,5 @@
     "simplenews_block_quantity": 5,
     "simplenews_block_rss": true,
     "simplenews_machine_name": "newsletter",
-    "simplenews_content_type_simplenews": true,
-    "simplenews_block_m_multiple": "Select the newsletter(s) to which you want to subscribe or unsubscribe.",
+    "simplenews_content_type_simplenews": true
 }

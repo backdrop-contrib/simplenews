@@ -427,6 +427,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
   if (!is_array($edit)) {
     $edit = (array) $edit;
   }
+
   $edit += array(
     'tid' => 0,
     'name' => '',
@@ -439,8 +440,8 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'priority' => $config->get('simplenews_priority'),
     'receipt' => $config->get('simplenews_receipt'),
     'from_name' => $config->get('simplenews_from_name'),
+    'from_email_address' => $config->get('simplenews_from_address'),
     'email_subject' => '[[simplenews-category:name]] [node:title]',
-    'from_address' => $config->get('simplenews_from_address'),
     'hyperlinks' => 1,
   );
 
@@ -566,6 +567,16 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#default_value' => $edit['from_name'],
   );
 
+  // Email from address
+  $form['simplenews_sender_information']['from_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From email address'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+    '#default_value' => $edit['from_email_address'],
+  );
+
   // Email subject
   $form['simplenews_subject'] = array(
     '#type' => 'fieldset',
@@ -592,16 +603,6 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#maxlength' => 128,
     '#required' => TRUE,
     '#default_value' => $edit['email_subject'],
-  );
-
-  // Email from address
-  $form['simplenews_sender_information']['from_address'] = array(
-    '#type' => 'textfield',
-    '#title' => t('From email address'),
-    '#size' => 60,
-    '#maxlength' => 128,
-    '#required' => TRUE,
-    '#default_value' => $edit['from_address'],
   );
 
   // Type of hyperlinks

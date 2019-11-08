@@ -353,8 +353,8 @@ function simplenews_install() {
     config_set('simplenews.settings', 'simplenews_test_address', $email);
   }
   elseif (!empty($email = ini_get('sendmail_from'))) {
-    // This is not alway reliable as https://www.php.net/manual/en/mail.configuration.php
-    // shows the default for `sendmail_from` is  NULL.
+    // This is not always reliable as https://www.php.net/manual/en/mail.configuration.php
+    // shows the default for `sendmail_from` is NULL.
     config_set('simplenews.settings', 'simplenews_from_address', $email);
     config_set('simplenews.settings', 'simplenews_test_address', $email);
   }
@@ -362,30 +362,9 @@ function simplenews_install() {
     // As the last resort, there is no chance $user->init returns empty.
     $user = user_load('1');
     config_set('simplenews.settings', 'simplenews_from_address', $user->init);
-
+    config_set('simplenews.settings', 'simplenews_test_address', $user->init);
   }
-
   config_set('simplenews.settings', 'simplenews_from_name', config_get('system.core', 'site_name'));
-  config_set('simplenews.settings', 'simplenews_format', "plain");
-  config_set('simplenews.settings', 'simplenews_priority', SIMPLENEWS_PRIORITY_NONE);
-  config_set('simplenews.settings', 'simplenews_send', 0);
-  config_set('simplenews.settings', 'simplenews_use_cron',  TRUE);
-  config_set('simplenews.settings', 'simplenews_source_cache', "SimplenewsSourceCacheBuild");
-  config_set('simplenews.settings', 'simplenews_throttle', "20");
-  config_set('simplenews.settings', 'simplenews_debug', FALSE);
-  config_set('simplenews.settings', 'simplenews_sync_account', TRUE);
-  config_set('simplenews.settings', 'simplenews_use_combined', "multiple");
-  config_set('simplenews.settings', 'simplenews_spool_progress_expiration', "3600");
-  config_set('simplenews.settings', 'simplenews_source', "SimplenewsSourceNode");
-  config_set('simplenews.settings', 'simplenews_private_key', FALSE);
-  config_set('simplenews.settings', 'simplenews_category_field', 'field_simplenews_term');
-  config_set('simplenews.settings', 'simplenews_block_message_multiple', st('Select the newsletter(s) to which you want to subscribe or unsubscribe.'));
-  config_set('simplenews.settings', 'simplenews_block_message', "Stay informed on our latest news!");
-  config_set('simplenews.settings', 'simplenews_block_interface', 1);
-  config_set('simplenews.settings', 'simplenews_block_link', TRUE);
-  config_set('simplenews.settings', 'simplenews_block_previous', FALSE);
-  config_set('simplenews.settings', 'simplenews_block_quantity', 5);
-  config_set('simplenews.settings', 'simplenews_block_rss', TRUE);
 
   _simplenews_init_simplenews_vocabulary();
   _simplenews_init_simplenews_category();
@@ -397,10 +376,6 @@ function simplenews_install() {
  * Implements hook_uninstall().
  */
 function simplenews_uninstall() {
-  // Remove Simplenews database tables.
-  if (taxonomy_vocabulary_load('newsletter')) {
-    taxonomy_vocabulary_delete('newsletter');
-  }
   // Remove Simplenews configuration file.
   config('simplenews.settings')->delete();
 }

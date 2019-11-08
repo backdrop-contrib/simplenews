@@ -174,8 +174,7 @@ function simplenews_block_form($form, &$form_state, $tid) {
  */
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * form_validate
  */
 function simplenews_block_form_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['mail'])) {
@@ -188,8 +187,7 @@ function simplenews_block_form_validate($form, &$form_state) {
  */
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * form_submit
  */
 function simplenews_block_form_submit($form, &$form_state) {
   $tid = $form['#tid'];
@@ -625,8 +623,7 @@ function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * form_submit
  */
 function simplenews_confirm_add_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -666,8 +663,7 @@ function simplenews_confirm_multi_form($form, &$form_state, $subscriber) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * form_submit
  */
 function simplenews_confirm_multi_form_submit($form, &$form_state) {
   $subscriber = $form_state['values']['subscriber'];
@@ -733,8 +729,7 @@ function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * form_submit
  */
 function simplenews_confirm_removal_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');

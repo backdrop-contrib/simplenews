@@ -10,7 +10,7 @@ Requirements
 
  * For large mailing lists, cron is required.
  * HTML-format newsletters and/or newsletters with file attachments require the mime mail or HMTL mail module.
- * When sending newsletters on regular cron (cron.php), it is important that the base url (settings.php, variable $base_url) is set correctly or links inside the newsletter will not work. 
+ * When sending newsletters on regular cron (cron.php), it is important that the base url (settings.php, variable $base_url) is set correctly or links inside the newsletter will not work.
  * Additionally when using Drush to start cron, it is important to use the argument --uri=http://www.example.com
 
 
@@ -25,7 +25,7 @@ Configuration
 
 * To administer various Simplenews settings go to Configuration > Web services > Newsletter > Settings  (`/admin/config/services/simplenews/settings`).
 
-* Add or edit newsletter categories on Configuration > Web services > Newsletter (`/admin/config/services/simplenews`). 
+* Add or edit newsletter categories on Configuration > Web services > Newsletter (`/admin/config/services/simplenews`).
 
 * By default Simplenews creates a new `Simplenews newsletter` content type, however you can enable any other content type to use as a newsletter on Structure > ccontent type > Configure > Publishing settings > Use as simplenews newsletter.
 
@@ -45,7 +45,7 @@ Cron is required to send large mailing lists. If you have a medium or large size
 
 To use cron:
   * Check the 'Use cron to send newsletters' checkbox.
-  * Set the 'Cron throttle' to the number of newsletters send per cron run. Too high values may lead to mail server overload or you may hit hosting restrictions. 
+  * Set the 'Cron throttle' to the number of newsletters send per cron run. Too high values may lead to mail server overload or you may hit hosting restrictions.
 
 Don't use cron:
   * Uncheck the 'Use cron to send newsletters' checkbox.
@@ -92,10 +92,10 @@ Related modules
    Allows fine grained control over cron tasks.
    https://backdropcms.org/project/elysia_cron
  * Mailsystem
-   Extends drupal core mailystem wirh Administrative UI and Developers API.
+   Extends Backdrop core mailystem wirh Administrative UI and Developers API.
    https://backdropcms.org/project/mailsystem
  * Maillog
-   Captures outgoing mails, helps users debugging simplenews.
+   Captures outgoing mails, helps users debugging Simplenews.
    https://backdropcms.org/project/maillog
 
 
