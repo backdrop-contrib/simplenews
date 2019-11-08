@@ -160,12 +160,12 @@ interface SimplenewsSourceCacheInterface {
    * @param $group
    *   Group of the cache key, which allows cache implementations to decide what
    *   they want to cache. Currently used groups:
-   *     - data: Raw data, e.g. attachments.
+   *     - data: Raw data, e.g., attachments.
    *     - build: Built and themed content, before personalizations like tokens.
    *     - final: The final returned data. Caching this means that newsletter
    *       can not be personalized anymore.
    * @param $key
-   *   Identifies the requested element, e.g. body, footer or attachments.
+   *   Identifies the requested element, e.g., body, footer or attachments.
    */
   function get($group, $key);
 
@@ -179,12 +179,12 @@ interface SimplenewsSourceCacheInterface {
    * @param $group
    *   Group of the cache key, which allows cache implementations to decide what
    *   they want to cache. Currently used groups:
-   *     - data: Raw data, e.g. attachments.
+   *     - data: Raw data, e.g., attachments.
    *     - build: Built and themed content, before personalizations like tokens.
    *     - final: The final returned data. Caching this means that newsletter
    *       can not be personalized anymore.
    * @param $key
-   *   Identifies the requested element, e.g. body, footer or attachments.
+   *   Identifies the requested element, e.g., body, footer or attachments.
    * @param $data
    *   The data to be saved in the cache.
    */
@@ -215,7 +215,7 @@ interface SimplenewsSpoolInterface {
   /**
    * Returns a Simplenews source to be sent.
    *
-   * A single source may represent any number of mail spool rows, e.g. by
+   * A single source may represent any number of mail spool rows, e.g., by
    * addressing them as BCC.
    */
   function nextSource();
@@ -286,7 +286,7 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
       // the next mail.
       $this->processed[$spool_data->msid]->result = array(
         'status' => SIMPLENEWS_SPOOL_DONE,
-        'error' => TRUE
+        'error' => TRUE,
       );
       return $this->nextSource();
     }
@@ -303,7 +303,7 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
       // proceed with the next mail.
       $this->processed[$spool_data->msid]->result = array(
         'status' => SIMPLENEWS_SPOOL_DONE,
-        'error' => TRUE
+        'error' => TRUE,
       );
       return $this->nextSource();
     }
@@ -403,19 +403,19 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
       // the equivalent of the node in the required language is used
       // or the base node (nid == tnid) is used.
       if ($tnid = $node->tnid) {
-        if ($langcode != $node->language) {
+        if ($langcode != $node->langcode) {
           $translations = translation_node_get_translations($tnid);
           // A translation is available in the preferred language.
           if ($translation = $translations[$langcode]) {
             $nid = $translation->nid;
-            $langcode = $translation->language;
+            $langcode = $translation->langcode;
           }
           else {
             // No translation found which matches the preferred language.
             foreach ($translations as $translation) {
               if ($translation->nid == $tnid) {
                 $nid = $tnid;
-                $langcode = $translation->language;
+                $langcode = $translation->langcode;
                 break;
               }
             }
@@ -572,7 +572,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    * Implements SimplenewsSourceInterface::getLanguage().
    */
   function getLanguage() {
-    return $this->getSubscriber()->language;
+    return $this->getSubscriber()->langcode;
   }
 
   /**
@@ -705,7 +705,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
     return $this->getBodyWithFormat('plain');
   }
 
-   /**
+  /**
    * Get the body with the requested format.
    *
    * @param $format
@@ -945,7 +945,7 @@ class SimplenewsSourceCacheBuild extends SimplenewsSourceCacheStatic {
       return FALSE;
     }
 
-     // Only cache data and build information.
+    // Only cache data and build information.
     return in_array($group, array('data', 'build'));
   }
 
@@ -959,11 +959,15 @@ class SimplenewsSourceCacheBuild extends SimplenewsSourceCacheStatic {
 class SimplenewsSourceTest implements SimplenewsSourceInterface {
 
   protected $format;
-
+  /**
+   * {@inheritdoc}
+   */
   public function __construct($format) {
     $this->format = $format;
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getAttachments() {
     return array(
       array(
@@ -973,56 +977,82 @@ class SimplenewsSourceTest implements SimplenewsSourceInterface {
       ),
     );
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getBody() {
     return $this->getFormat() == 'plain' ? $this->getPlainBody() : 'the body';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getFooter() {
     return $this->getFormat() == 'plain' ? $this->getPlainFooter() : 'the footer';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getPlainFooter() {
     return 'the plain footer';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getFormat() {
     return $this->format;
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getFromAddress() {
     return 'test@example.org';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getFromFormatted() {
     return 'Test <test@example.org>';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getHeaders(array $headers) {
     $headers['X-Simplenews-Test'] = 'OK';
     return $headers;
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getKey() {
     return 'node';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getLanguage() {
     return 'en';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getPlainBody() {
     return 'the plain body';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getRecipient() {
     return 'recipient@example.org';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getSubject() {
     return 'the subject';
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getTokenContext() {
     return array();
   }

@@ -71,17 +71,6 @@ define('SIMPLENEWS_OPT_INOUT_DOUBLE', 'double');
 define('SIMPLENEWS_UNLIMITED', -1);
 
 /**
- * Implements hook_config_info().
- */
-function simplenews_config_info() {
-  $prefixes['simplenews.settings'] = array(
-    'label' => t('simplenews settings'),
-    'group' => t('simplenews'),
-  );
-  return $prefixes;
-} 
-
-/**
  * Implements hook_permission().
  *
  * @todo Change sort order where required: http://drupal.org/node/224333#sorting_permissions
@@ -321,6 +310,16 @@ function simplenews_node_type_update($info) {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function simplenews_config_info() {
+  $prefixes['simplenews.settings'] = array(
+    'label' => t('Module name settings'),
+    'group' => t('Configuration'),
+  );
+}
+
+/**
  * Implements hook_node_type_insert().
  */
 function simplenews_node_type_insert($info) {
@@ -388,8 +387,8 @@ function simplenews_node_view($node, $view_mode) {
 function simplenews_get_term_values($node) {
   $category_field = simplenews_get_category_field($node->type);
   $taxonomy = $node->{$category_field['field_name']};
-  if (isset($taxonomy[$node->language])) {
-    return $taxonomy[$node->language];
+  if (isset($taxonomy[$node->langcode])) {
+    return $taxonomy[$node->langcode];
   }
 
   $term = current($taxonomy);
@@ -513,13 +512,13 @@ function simplenews_node_delete($node) {
   $count = simplenews_delete_spool(array('nid' => $node->nid));
   if ($count) {
     backdrop_set_message(t('Newsletter %title was deleted but had @count pending emails. They can no longer be sent.', array(
-        '%title' => $node->title,
-        '@count' => $count,
-      )), 'warning');
+      '%title' => $node->title,
+      '@count' => $count,
+    )), 'warning');
     watchdog('simplenews', 'Newsletter %title deleted with @count pending emails. Emails can no longer be sent.', array(
       '%title' => $node->title,
       '@count' => $count,
-      ), WATCHDOG_ALERT);
+    ), WATCHDOG_ALERT);
   }
   backdrop_set_message(t('Newsletter %title was deleted.', array('%title' => $node->title)));
 }
@@ -611,6 +610,7 @@ function simplenews_add_term_field($type) {
   $field_name = config_get('simplenews.settings', 'simplenews_category_field');
   $field = field_info_field($field_name);
   $instance = field_info_instance('node', $field_name, $type->type);
+
   if (empty($field)) {
     $field = array(
       'field_name' => $field_name,
@@ -739,11 +739,11 @@ function simplenews_form_taxonomy_form_term_alter(&$form, $form_state) {
  *
  * Delete simplenews category if taxonomy term is delete.
  */
-function simplenews_taxonomy_term_delete($term) {
+function simplenews_taxonomy_term_delete(TaxonomyTerm $term) {
   // A simplenews newsletter category can not exist without the associated
   // taxonomy term. So we delete the category. simplenews_category_delete()
   // will also delete the subscriptions to the category.
-  if ($term->vocabulary_machine_name == 'newsletter') {
+  if ($term->vocabulary == 'newsletter') {
     // Make sure we only try to delete if not already deleted.
     if (($category = simplenews_category_load($term->tid)) !== FALSE) {
       // Add name and description from $term object.
@@ -763,6 +763,11 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
     if (in_array($form['type']['#value'], simplenews_get_content_types())) {
       _simplenews_node_form($form, $form_state);
     }
+  }
+  // Prevent creating taxonomy terms and instead redirect
+  // to Newsletter configuration page to add categories.
+  if ($form_id == 'taxonomy_form_term' && $form['#action'] == '/admin/structure/taxonomy/newsletter/add') {
+    backdrop_goto('admin/config/services/simplenews/add');
   }
 }
 
@@ -887,7 +892,7 @@ function simplenews_user_insert(&$edit, $account, $category) {
   // If the user is subscribed, we update the subscriber with uid and language.
   if ($subscriber) {
     $subscriber->uid = $edit['uid'];
-    $subscriber->language = $edit['language'];
+    $subscriber->langcode = $edit['language'];
     $subscriber->activated = 1;
     simplenews_subscriber_save($subscriber);
   }
@@ -962,7 +967,7 @@ function simplenews_user_presave(&$edit, $account, $category) {
             $subscriber->activated = $edit['status'];
           }
           if (isset($edit['language'])) {
-            $subscriber->language = $edit['language'];
+            $subscriber->langcode = $edit['language'];
           }
           simplenews_subscriber_save($subscriber);
         }
@@ -1110,7 +1115,7 @@ function simplenews_block_info() {
     $blocks[$category->tid] = array(
       'info' => t('Newsletter: @title', array('@title' => _simplenews_newsletter_name($category))),
       // @todo Use block's own settings?
-      'cache' => config_get('simplenews.settings', 'simplenews_block_f_' . $category->tid) ? BACKDROP_NO_CACHE : BACKDROP_CACHE_PER_ROLE,
+      'cache' => config_get('simplenews.settings', 'simplenews_block_interface_' . $category->tid) ? BACKDROP_NO_CACHE : BACKDROP_CACHE_PER_ROLE,
     );
   }
   return $blocks;
@@ -1120,55 +1125,61 @@ function simplenews_block_info() {
  * Implements hook_block_configure().
  */
 function simplenews_block_configure($delta = '') {
+  $config = config('simplenews.settings');
   // Special block for multi
   if ($delta == 0) {
-    $form['simplenews_block_multiple']['simplenews_block_m_multiple'] = array(
+    $form['simplenews_block_multiple']['simplenews_block_message_multiple'] = array(
       '#type' => 'textfield',
       '#title' => t('Block message'),
       '#size' => 60,
       '#maxlength' => 255,
       // @todo: clean localization / i18n needed
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_m_multiple'),
+      '#default_value' => $config->get('simplenews_block_message_multiple'),
     );
   }
   else {
-    $form['simplenews_block_' . $delta]['simplenews_block_m_' . $delta] = array(
+    $form['simplenews_block_' . $delta]['simplenews_block_message_' . $delta] = array(
       '#type' => 'textfield',
       '#title' => t('Block message'),
       '#size' => 60,
       '#maxlength' => 255,
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_m_' . $delta),
+      '#default_value' => !empty($config->get('simplenews_block_message_' . $delta)) ? $config->get('simplenews_block_message_' . $delta) : $config->get('simplenews_block_message'),
     );
-    $form['simplenews_block_' . $delta]['simplenews_block_f_' . $delta] = array(
+
+    $form['simplenews_block_' . $delta]['simplenews_block_interface_' . $delta] = array(
       '#type' => 'radios',
       '#title' => t('Subscription interface'),
-      '#options' => array('1' => t('Subscription form'), '0' => t('Link to form')),
+      '#options' => array(
+        '1' => t('Subscription form'),
+        '0' => t('Link to form'),
+      ),
       '#description' => t("Note: this requires permission 'subscribe to newsletters'."),
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_f_' . $delta),
+      '#default_value' => NULL !== $config->get('simplenews_block_interface_' . $delta) ? $config->get('simplenews_block_interface_' . $delta) : $config->get('simplenews_block_interface'),
     );
-    $form['simplenews_block_' . $delta]['simplenews_block_l_' . $delta] = array(
+
+    $form['simplenews_block_' . $delta]['simplenews_block_link_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display link to previous issues'),
       '#return_value' => 1,
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_l_' . $delta),
+      '#default_value' => NULL !== $config->get('simplenews_block_link_' . $delta) ? $config->get('simplenews_block_link_' . $delta) : $config->get('simplenews_block_link'),
     );
-    $form['simplenews_block_' . $delta]['simplenews_block_i_status_' . $delta] = array(
+    $form['simplenews_block_' . $delta]['simplenews_block_previous_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display previous issues'),
       '#return_value' => 1,
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_i_status_' . $delta),
+      '#default_value' => NULL !== $config->get('simplenews_block_previous_' . $delta) ? $config->get('simplenews_block_previous_' . $delta) : $config->get('simplenews_block_previous'),
     );
-    $form['simplenews_block_' . $delta]['simplenews_block_i_' . $delta] = array(
+    $form['simplenews_block_' . $delta]['simplenews_block_quantity_' . $delta] = array(
       '#type' => 'select',
       '#title' => t('Number of issues to display'),
       '#options' => backdrop_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_i_' . $delta),
+      '#default_value' => NULL !== $config->get('simplenews_block_quantity_' . $delta) ? $config->get('simplenews_block_quantity_' . $delta) : $config->get('simplenews_block_quantity'),
     );
-    $form['simplenews_block_' . $delta]['simplenews_block_r_' . $delta] = array(
+    $form['simplenews_block_' . $delta]['simplenews_block_rss_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display RSS-feed icon'),
       '#return_value' => 1,
-      '#default_value' => config_get('simplenews.settings', 'simplenews_block_r_' . $delta),
+      '#default_value' => NULL !== $config->get('simplenews_block_rss_' . $delta) ? $config->get('simplenews_block_rss_' . $delta) : $config->get('simplenews_block_rss'),
     );
   }
   return $form;
@@ -1179,15 +1190,22 @@ function simplenews_block_configure($delta = '') {
  */
 function simplenews_block_save($delta = '', $edit = array()) {
   if ($delta == 0) {
-    config_set('simplenews.settings', 'simplenews_block_m_multiple', $edit['simplenews_block_m_multiple']);
+    config_set('simplenews.settings', 'simplenews_block_message_multiple', $edit['simplenews_block_multiple']['simplenews_block_message_multiple']);
   }
   else {
-    config_set('simplenews.settings', 'simplenews_block_m_' . $delta, $edit['simplenews_block_m_' . $delta]);
-    config_set('simplenews.settings', 'simplenews_block_f_' . $delta, $edit['simplenews_block_f_' . $delta]);
-    config_set('simplenews.settings', 'simplenews_block_l_' . $delta, $edit['simplenews_block_l_' . $delta]);
-    config_set('simplenews.settings', 'simplenews_block_i_status_' . $delta, $edit['simplenews_block_i_status_' . $delta]);
-    config_set('simplenews.settings', 'simplenews_block_i_' . $delta, $edit['simplenews_block_i_' . $delta]);
-    config_set('simplenews.settings', 'simplenews_block_r_' . $delta, $edit['simplenews_block_r_' . $delta]);
+    $block = 'simplenews_block_' . $delta;
+    $m = 'simplenews_block_message_' . $delta;
+    $i = 'simplenews_block_interface_' . $delta;
+    $l = 'simplenews_block_link_' . $delta;
+    $p = 'simplenews_block_previous_' . $delta;
+    $q = 'simplenews_block_quantity_' . $delta;
+    $r = 'simplenews_block_rss_' . $delta;
+    config_set('simplenews.settings', $m, $edit[$block][$m]);
+    config_set('simplenews.settings', $i, $edit[$block][$i]);
+    config_set('simplenews.settings', $l, $edit[$block][$l]);
+    config_set('simplenews.settings', $p, $edit[$block][$p]);
+    config_set('simplenews.settings', $q, $edit[$block][$q]);
+    config_set('simplenews.settings', $r, $edit[$block][$r]);
   }
 }
 
@@ -1298,25 +1316,25 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
   // If user is not subscribed to ANY newsletter, create a subscription account
   if (!$subscriber) {
     // To subscribe a user:
-    //   - Fetch the users uid.
-    //   - Determine the user preferred language.
-    //   - Add the user to the database.
-    //   - Get the full subscription object based on the mail address.
+//   - Fetch the users uid.
+//   - Determine the user preferred language.
+//   - Add the user to the database.
+//   - Get the full subscription object based on the mail address.
     // Note that step 3 gets subscription data based on mail address because the uid can be 0 (for anonymous users)
     $account = simplenews_load_user_by_mail($mail);
 
     // If the site is multilingual:
-    //  - Anonymous users are subscribed with their preferred language
-    //    equal to the language of the current page.
-    //  - Registered users will be subscribed with their default language as
-    //    set in their account settings.
+//  - Anonymous users are subscribed with their preferred language
+//    equal to the language of the current page.
+//  - Registered users will be subscribed with their default language as
+//    set in their account settings.
     // By default the preferred language is not set.
-    if (config_get('simplenews.settings', 'language_count') > 1) {
+    if (config_get('system.core', 'language_count') > 1) {
       if ($account->uid) {
-        $preferred_language = $account->language;
+        $preferred_language = $account->langcode;
       }
       else {
-        $preferred_language = isset($preferred_language) ? $preferred_language : $language->language;
+        $preferred_language = isset($preferred_language) ? $preferred_language : $language->langcode;
       }
     }
     else {
@@ -1326,7 +1344,7 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
     $subscriber = new stdClass();
     $subscriber->mail = $mail;
     $subscriber->uid = $account->uid;
-    $subscriber->language = $preferred_language;
+    $subscriber->langcode = $preferred_language;
     $subscriber->activated = 1;
     simplenews_subscriber_save($subscriber);
   }
@@ -1476,7 +1494,7 @@ function simplenews_get_subscriptions_by_list($tid) {
  * Update subscriber objects in the database.
  *
  * @param $conditions
- *   Array of selection conditions. e.g. array('tid' => 5, 'snid' => 12).
+ *   Array of selection conditions. e.g., array('tid' => 5, 'snid' => 12).
  * @param $data
  *   Associative array of database fields to be updated.
  *
@@ -1503,12 +1521,12 @@ function simplenews_subscription_save($subscription) {
     ->key(array('tid' => $subscription->tid))
     ->key(array('snid' => $subscription->snid))
     ->fields(array(
-      'snid' => $subscription->snid,
-      'tid' => $subscription->tid,
-      'status' => $subscription->status,
-      'timestamp' => $subscription->timestamp,
-      'source' => $subscription->source,
-    ))
+    'snid' => $subscription->snid,
+    'tid' => $subscription->tid,
+    'status' => $subscription->status,
+    'timestamp' => $subscription->timestamp,
+    'source' => $subscription->source,
+  ))
     ->execute();
 }
 
@@ -1673,13 +1691,13 @@ function simplenews_subscriber_save(&$subscriber) {
     db_update('simplenews_subscriber')
       ->condition('snid', $subscriber->snid)
       ->fields(array(
-        'snid' => $subscriber->snid,
-        'activated' => (int) $subscriber->activated,
-        'mail' => $subscriber->mail,
-        'uid' => $subscriber->uid,
-        'language' => $subscriber->language,
-        'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
-      ))
+      'snid' => $subscriber->snid,
+      'activated' => (int) $subscriber->activated,
+      'mail' => $subscriber->mail,
+      'uid' => $subscriber->uid,
+      'language' => $subscriber->langcode,
+      'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
+    ))
       ->execute();
     module_invoke_all('simplenews_subscriber_update', $subscriber);
   }
@@ -1689,10 +1707,10 @@ function simplenews_subscriber_save(&$subscriber) {
       'activated' => $subscriber->activated,
       'mail' => $subscriber->mail,
       'uid' => $subscriber->uid,
-      'language' => $subscriber->language,
+      'language' => $subscriber->langcode,
       'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
       'created' => REQUEST_TIME,
-      ));
+    ));
     $last_insert_id = $query->execute();
     if ($last_insert_id !== FALSE) {
       $subscriber->snid = $last_insert_id;
@@ -1797,7 +1815,7 @@ function simplenews_mail($key, &$message, $params) {
 function simplenews_views_api() {
   return array(
     'api' => 3,
-    'path' => backdrop_get_path('module', 'simplenews') . '/includes/views'
+    'path' => backdrop_get_path('module', 'simplenews') . '/includes/views',
   );
 }
 
@@ -1845,34 +1863,37 @@ function simplenews_category_list() {
 function simplenews_categories_load_multiple($tids = array(), $conditions = array(), $reset = FALSE) {
   $categories = &backdrop_static(__FUNCTION__, array());
 
-  // Only cache if we load all records from the database. This could be improved.
-  if (!$categories || $tids || $conditions || $reset) {
-    $categories = array();
-    $query = db_select('simplenews_category', 'sc');
-    // This function might be called when the corresponding taxonomy term was
-    // already deleted.
-    $query->leftJoin('taxonomy_term_data', 't', 't.tid = sc.tid');
-    $query->fields('sc')
-      ->fields('t', array('name', 'description', 'weight', 'vid'))
-      ->orderBy('t.weight', 'ASC');
-    if ($tids) {
-      $query->condition('sc.tid', $tids);
-    }
-    if ($conditions) {
-      foreach ($conditions as $key => $condition) {
-        if ($key == 'show_all') {
-          if (!$condition) {
-            $query->condition('opt_inout', SIMPLENEWS_OPT_INOUT_HIDDEN, '<>');
+  if (db_table_exists('simplenews_category')) {
+    // Only cache if we load all records from the database. This could be improved.
+    if (!$categories || $tids || $conditions || $reset) {
+
+      $categories = array();
+      $query = db_select('simplenews_category', 'sc');
+      // This function might be called when the corresponding taxonomy term was
+      // already deleted.
+      $query->leftJoin('taxonomy_term_data', 't', 't.tid = sc.tid');
+      $query->fields('sc')
+        ->fields('t', array('name', 'description', 'weight', 'vocabulary'))
+        ->orderBy('t.weight', 'ASC');
+      if ($tids) {
+        $query->condition('sc.tid', $tids);
+      }
+      if ($conditions) {
+        foreach ($conditions as $key => $condition) {
+          if ($key == 'show_all') {
+            if (!$condition) {
+              $query->condition('opt_inout', SIMPLENEWS_OPT_INOUT_HIDDEN, '<>');
+            }
+          }
+          else {
+            $query->condition($key, $condition);
           }
         }
-        else {
-          $query->condition($key, $condition);
-        }
       }
+      $categories = $query->execute()->fetchAllAssoc('tid');
     }
-
-    $categories = $query->execute()->fetchAllAssoc('tid');
   }
+
   return $categories;
 }
 
@@ -1888,18 +1909,18 @@ function simplenews_category_save($category) {
   db_merge('simplenews_category')
     ->key(array('tid' => $category->tid))
     ->fields(array(
-      'tid' => $category->tid,
-      'format' => $category->format,
-      'priority' => $category->priority,
-      'receipt' => $category->receipt,
-      'from_name' => $category->from_name,
-      'from_address' => $category->from_address,
-      'email_subject' => $category->email_subject,
-      'hyperlinks' => $category->hyperlinks,
-      'new_account' => $category->new_account,
-      'opt_inout' => $category->opt_inout,
-      'block' => $category->block,
-    ))
+    'tid' => $category->tid,
+    'format' => $category->format,
+    'priority' => $category->priority,
+    'receipt' => $category->receipt,
+    'from_name' => $category->from_name,
+    'email_subject' => $category->email_subject,
+    'from_address' => $category->from_address,
+    'hyperlinks' => $category->hyperlinks,
+    'new_account' => $category->new_account,
+    'opt_inout' => $category->opt_inout,
+    'block' => $category->block,
+  ))
     ->execute();
   module_invoke_all('simplenews_category_update', $category);
 }
@@ -1918,18 +1939,22 @@ function simplenews_category_delete($category) {
   }
 
   if ($category) {
-    db_delete('simplenews_category')
-      ->condition('tid', $category->tid)
-      ->execute();
 
     // Delete subscriptions
     simplenews_subscription_delete(array('tid' => $category->tid));
     backdrop_set_message(t('All subscriptions to newsletter %newsletter have been deleted.', array('%newsletter' => _simplenews_newsletter_name($category))));
 
+    /*
+    AltaGrade delete if not needed.
     // Delete subscription block
     db_delete('block')
       ->condition('module', 'simplenews')
       ->condition('delta', $category->tid)
+      ->execute();
+      */
+
+    db_delete('simplenews_category')
+      ->condition('tid', $category->tid)
       ->execute();
 
     module_invoke_all('simplenews_category_delete', $category);
@@ -2006,9 +2031,9 @@ function simplenews_newsletter_save($newsletter) {
   db_merge('simplenews_newsletter')
     ->key(array('nid' => $newsletter->nid))
     ->fields(array(
-      'tid' => $newsletter->tid,
-      'status' => $newsletter->status,
-    ))
+    'tid' => $newsletter->tid,
+    'status' => $newsletter->status,
+  ))
     ->execute();
 }
 
@@ -2038,7 +2063,7 @@ function simplenews_newsletter_delete($newsletter) {
 function simplenews_private_key() {
   $key = config_get('simplenews.settings', 'simplenews_private_key');
   if (!$key) {
-    //  This will create a 32 character identifier (a 128 bit hex number) that is extremely difficult to predict
+//  This will create a 32 character identifier (a 128 bit hex number) that is extremely difficult to predict
     $key = md5(uniqid(rand()));
     config_set('simplenews.settings', 'simplenews_private_key', $key);
   }
@@ -2096,7 +2121,7 @@ function simplenews_help($path, $arg) {
       $help = '<p>' . t('Newsletter allow you to send periodic e-mails to subscribers. See <a href="!manage_subscribers">Newsletter subscriptions</a> for a listing of the subscribers', array('!manage_subscribers' => url('admin/people/simplenews')));
       return $help;
     case 'admin/config/services/simplenews/add':
-      $help = '<p>' . t('You can create different newsletters (or subjects) to categorize your news (e.g. Cats news, Dogs news, ...).') . "</p>\n";
+      $help = '<p>' . t('You can create different newsletters (or subjects) to categorize your news (e.g., Cats news, Dogs news, ...).') . "</p>\n";
       return $help;
     case 'admin/structure/types/manage/simplenews/display':
       $help = '<p>' . t("'Plain' display settings apply to the content of emails send in plain text format. 'HTML' display settings apply to both HTML and plain text alternative content of emails send in HTML format.") . "</p>\n";
@@ -2157,10 +2182,18 @@ function simplenews_generate_hash($mail, $snid, $tid) {
  * Returns simplenews format options.
  */
 function simplenews_format_options() {
-  return array(
-    'plain' => t('Plain'),
-    'html' => t('HTML'),
-  );
+  if (module_exists('mimemail') || module_exists('htmlmail')) {
+    $format_options = array(
+      'plain' => t('Plain'),
+      'html' => t('HTML'),
+    );
+  }
+  else {
+    $format_options = array(
+      'plain' => t('Plain'),
+    );
+  }
+  return $format_options;
 }
 
 /**
@@ -2258,16 +2291,16 @@ function simplenews_subscription_confirmation_text($key) {
       case 'combined_body_unchanged':
         $text = t("We have received a request for the following subscription changes for [simplenews-subscriber:mail] at [site:url]:\n\n[changes-list]\n\nNo confirmation necessary because all requested changes equal the current state.");
         break;
-      case 'combined_line_subscribe_unsubscribed';
+      case 'combined_line_subscribe_unsubscribed':
         $text = t('Subscribe to [simplenews-category:name]');
         break;
-      case 'combined_line_subscribe_subscribed';
+      case 'combined_line_subscribe_subscribed':
         $text = t('Already subscribed to [simplenews-category:name]');
         break;
-      case 'combined_line_unsubscribe_subscribed';
+      case 'combined_line_unsubscribe_subscribed':
         $text = t('Unsubscribe from [simplenews-category:name]');
         break;
-      case 'combined_line_unsubscribe_unsubscribed';
+      case 'combined_line_unsubscribe_unsubscribed':
         $text = t('Already unsubscribed from [simplenews-category:name]');
         break;
     }
@@ -2361,6 +2394,7 @@ function simplenews_theme() {
  * @ingroup theming
  */
 function template_preprocess_simplenews_block(&$variables) {
+  $config = config('simplenews.settings');
   global $user;
   $tid = $variables['tid'];
   $category = simplenews_category_load($tid);
@@ -2373,7 +2407,7 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = '';
 
   // Block content variables
-  $variables['message'] = check_plain(config_get('simplenews.settings', 'simplenews_block_m_' . $tid));
+  $variables['message'] = check_plain($config->get('simplenews_block_message_' . $tid));
   if (user_access('subscribe to newsletters')) {
     module_load_include('inc', 'simplenews', 'simplenews.subscription');
     $variables['form'] = backdrop_get_form('simplenews_block_form_' . $tid);
@@ -2381,7 +2415,7 @@ function template_preprocess_simplenews_block(&$variables) {
   }
   // @todo replace path
   $variables['newsletter_link'] = l(t('Previous issues'), 'taxonomy/term/' . $tid);
-  $recent = simplenews_recent_newsletters($tid, config_get('simplenews.settings', 'simplenews_block_i_' . $tid));
+  $recent = simplenews_recent_newsletters($tid, $config->get('simplenews_block_quantity_' . $tid));
   $variables['issue_list'] = '';
   if ($recent) {
     $variables['issue_list'] = theme('item_list', array('items' => $recent, 'title' => t('Previous issues'), 'type' => 'ul'));
@@ -2389,10 +2423,10 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = theme('feed_icon', array('url' => 'taxonomy/term/' . $tid . '/feed', 'title' => t('@newsletter feed', array('@newsletter' => _simplenews_newsletter_name($category)))));
 
   // Block content control variables
-  $variables['use_form'] = config_get('simplenews.settings', 'simplenews_block_f_' . $tid);
-  $variables['use_issue_link'] = config_get('simplenews.settings', 'simplenews_block_l_' . $tid);
-  $variables['use_issue_list'] = config_get('simplenews.settings', 'simplenews_block_i_status_' . $tid);
-  $variables['use_rss'] = config_get('simplenews.settings', 'simplenews_block_r_' . $tid);
+  $variables['use_form'] = $config->get('simplenews_block_interface_' . $tid);
+  $variables['use_issue_link'] = $config->get('simplenews_block_link_' . $tid);
+  $variables['use_issue_list'] = $config->get('simplenews_block_previous_' . $tid);
+  $variables['use_rss'] = $config->get('simplenews_block_rss_' . $tid);
 
   // Additional variables
   $variables['subscribed'] = empty($user->uid) ? FALSE : (simplenews_user_is_subscribed($user->mail, $tid) == TRUE);
@@ -2410,7 +2444,7 @@ function template_preprocess_simplenews_block(&$variables) {
  */
 function template_preprocess_simplenews_multi_block(&$variables) {
   // Block content variables
-  $variables['message'] = check_plain(config_get('simplenews.settings', 'simplenews_block_m_multiple'));
+  $variables['message'] = check_plain(config_get('simplenews.settings', 'simplenews_block_message_multiple'));
   $variables['form'] = backdrop_get_form('simplenews_subscriptions_multi_block_form');
 }
 
@@ -2451,6 +2485,10 @@ function template_preprocess_simplenews_field(&$variables, $hook) {
  * @ingroup theming
  */
 // @todo make simplenews_field.tpl.php
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function theme_simplenews_field($variables) {
   $output = '';
   switch ($variables['view_mode']) {
@@ -2507,7 +2545,7 @@ function template_preprocess_simplenews_newsletter_body(&$variables) {
   $variables['simplenews_theme'] = backdrop_get_path('theme', $theme);
 
   $variables['title'] = check_plain($variables['build']['#node']->title);
-  $variables['language'] = $variables['build']["#language"];
+  $variables['language'] = $variables['build']['#langcode'];
   $variables['view_mode'] = $variables['build']['#view_mode'];
 
   // Add specific suggestions that can override the default implementation.
@@ -2841,7 +2879,7 @@ function simplenews_confirmation_send_combined() {
     if (!$subscriber) {
       $subscriber = new stdClass();
       $subscriber->mail = $mail;
-      $subscriber->language = $language->language;
+      $subscriber->langcode = $language->langcode;
       $subscriber->tids = array();
     }
     $params['context']['simplenews_subscriber'] = $subscriber;
@@ -2851,12 +2889,12 @@ function simplenews_confirmation_send_combined() {
     if ((count($changes) > 1 && $use_combined != 'never') || $use_combined == 'always') {
       $params['context']['changes'] = $changes;
       $key = 'subscribe_combined';
-      backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
+      backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
     }
     else {
       foreach ($changes as $tid => $key) {
         $params['context']['category'] = simplenews_category_load($tid);
-        backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
+        backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
       }
     }
 
@@ -2894,7 +2932,7 @@ function simplenews_confirmation_send($action, $subscriber, $category) {
     $params['from'] = _simplenews_set_from();
     $params['context']['category'] = $category;
     $params['context']['simplenews_subscriber'] = $subscriber;
-    backdrop_mail('simplenews', $action, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
+    backdrop_mail('simplenews', $action, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
   }
 }
 
@@ -2917,7 +2955,7 @@ function simplenews_confirmation_send($action, $subscriber, $category) {
 function simplenews_confirmation_get_changes_list($subscriber, &$changes = NULL, $langcode = NULL) {
   if (empty($langcode)) {
     global $language;
-    $langcode = $language->language;
+    $langcode = $language->langcode;
   }
 
   if (empty($changes)) {
@@ -2948,4 +2986,34 @@ function simplenews_confirmation_get_changes_list($subscriber, &$changes = NULL,
     $changes_list[$tid] = token_replace($line, $category_context, array('sanitize' => FALSE));
   }
   return $changes_list;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function simplenews_autoload_info() {
+  return array(
+    'SimplenewsHTMLTestingMailSystem' => 'includes/simplenews.mail.inc',
+    'SimplenewsSourceInterface' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceNodeInterface' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceCacheInterface' => 'includes/simplenews.source.inc',
+    'SimplenewsSpoolInterface' => 'includes/simplenews.source.inc',
+    'SimplenewsSpool' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceNode' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceCacheStatic' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceCacheNone' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceCacheBuild' => 'includes/simplenews.source.inc',
+    'SimplenewsSourceTest' => 'includes/simplenews.source.inc',
+    'simplenews_handler_field_category_hyperlinks' => 'includes/views/handlers/simplenews_handler_field_category_hyperlinks.inc',
+    'simplenews_handler_field_category_new_account' => 'includes/views/handlers/simplenews_handler_field_category_new_account.inc',
+    'simplenews_handler_field_category_opt_inout' => 'includes/views/handlers/simplenews_handler_field_category_opt_inout.inc',
+    'simplenews_handler_field_newsletter_priority' => 'includes/views/handlers/simplenews_handler_field_newsletter_priority.inc',
+    'simplenews_handler_field_newsletter_send' => 'includes/views/handlers/simplenews_handler_field_newsletter_send.inc',
+    'simplenews_handler_field_newsletter_status' => 'includes/views/handlers/simplenews_handler_field_newsletter_status.inc',
+    'simplenews_handler_filter_category_hyperlinks' => 'includes/views/handlers/simplenews_handler_filter_category_hyperlinks.inc',
+    'simplenews_handler_filter_category_new_account' => 'includes/views/handlers/simplenews_handler_filter_category_new_account.inc',
+    'simplenews_handler_filter_category_opt_inout' => 'includes/views/handlers/simplenews_handler_filter_category_opt_inout.inc',
+    'simplenews_handler_filter_newsletter_priority' => 'includes/views/handlers/simplenews_handler_filter_newsletter_priority.inc',
+    'simplenews_handler_filter_newsletter_status' => 'includes/views/handlers/simplenews_handler_filter_newsletter_status.inc',
+  );
 }

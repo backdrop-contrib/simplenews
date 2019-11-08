@@ -21,8 +21,8 @@ function simplenews_rules_rules_action_info() {
           'type' => 'node',
           'label' => t('The newsletter node to be sent.'),
           'description' => t('The newsletter node that should be sent.'),
-        )
-      )
+        ),
+      ),
     ),
     'simplenews_rules_action_subscribe' => array(
       'label' => t('Subscribe an e-mail adress to a newsletter'),
@@ -149,9 +149,9 @@ function simplenews_rules_rules_action_info() {
 function simplenews_rules_rules_event_info() {
   return array(
     'simplenews_rules_event_subscribe' => array(
-      'label'  => t('A user has been subscribed'),
+      'label' => t('A user has been subscribed'),
       'group' => t('Simplenews'),
-      'variables'   => array(
+      'variables' => array(
         'mail' => array(
           'type' => 'text',
           'label' => t('E-Mail'),
@@ -166,9 +166,9 @@ function simplenews_rules_rules_event_info() {
       ),
     ),
     'simplenews_rules_event_unsubscribe' => array(
-      'label'  => t('A user has been unsubscribed'),
+      'label' => t('A user has been unsubscribed'),
       'group' => t('Simplenews'),
-      'variables'   => array(
+      'variables' => array(
         'mail' => array(
           'type' => 'text',
           'label' => t('E-mail'),
@@ -228,7 +228,7 @@ function simplenews_rules_action_unsubscribe($args, $settings) {
  * Action Implementation: Delete an email address from a specific Simplenews newsletter
  */
 function simplenews_rules_action_subscription_delete($args, $settings) {
-  if (!empty($args['mail']) && !empty($args['tid'])){
+  if (!empty($args['mail']) && !empty($args['tid'])) {
     simplenews_subscription_delete(array('mail' => $args['mail'], 'tid' => $args['tid']));
   }
 }

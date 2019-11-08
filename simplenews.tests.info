@@ -1,0 +1,60 @@
+[SimplenewsTestCase]
+name = SimplenewsTestCase
+description = SimplenewsTestCase
+group = simplenews
+file = tests/simplenews.test
+
+[SimplenewsSubscribeTestCase]
+name = Subscribe and unsubscribe users
+description = (un)subscription of anonymous and authenticated users. Subscription via block, subscription page and account page
+group = Simplenews
+file = tests/simplenews.test
+
+[SimpleNewsAdministrationTestCase]
+name = Simplenews administration
+description = Managing of newsletter categories and content types.
+group = Simplenews
+file = tests/simplenews.test
+
+[SimpleNewsI18nTestCase]
+name = Simplenews I18n
+description = Translation of newsletter categories
+group = Simplenews
+file = tests/simplenews.test
+
+[SimpleNewsUpgradePathTestCase]
+name = SimpleNewsUpgradePathTestCase
+description = SimpleNewsUpgradePathTestCase
+group = simplenews
+file = tests/simplenews.test
+
+[SimpleNewsUpgradePath61TestCase]
+name = Simplenews 6.x-1.x upgrade path
+description = Simplenews 6.x-1.x upgrade path tests.
+group = Simplenews
+file = tests/simplenews.test
+
+[SimpleNewsUpgradePath62TestCase]
+name = Simplenews 6.x-2.x upgrade path
+description = Simplenews 6.x-2.x upgrade path tests.
+group = Simplenews
+file = tests/simplenews.test
+
+[SimplenewsSendTestCase]
+name = Sending newsletters
+description = Creating and sending of newsletters, different send processes (with/without cron, send on publish)
+group = Simplenews
+file = tests/simplenews.test
+
+[SimplenewsSourceTestCase]
+name = Source tests
+description = Tests for the new source interfaces and concepts.
+group = Simplenews
+file = tests/simplenews.test
+
+[SimplenewsUnitTest]
+name = Unit tests
+description = Unit tests for certain functions.
+group = Simplenews
+file = tests/simplenews.test
+

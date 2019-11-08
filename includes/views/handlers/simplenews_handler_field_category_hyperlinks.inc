@@ -9,6 +9,9 @@
  * Provide HTML Mail Hyperlinks position settings.
  */
 class simplenews_handler_field_category_hyperlinks extends views_handler_field {
+  /**
+   * {@inheritdoc}
+   */
   function render($values) {
     switch ($values->{$this->field_alias}) {
       case 0:
