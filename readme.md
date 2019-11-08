@@ -312,7 +312,7 @@ AlexisWilke <https://www.drupal.org/u/alexiswilke>
 MAINTAINERS
 -----------
 
-- seeking
+Alan Mels (https://github.com/alanmels)
 
 Ported to Backdrop by:
 
