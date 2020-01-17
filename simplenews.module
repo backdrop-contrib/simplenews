@@ -886,24 +886,24 @@ function simplenews_form_user_register_form_alter(&$form, &$form_state) {
  *
  * Update uid and preferred language when the new account was already subscribed.
  */
-function simplenews_user_insert(&$edit, $account, $category) {
+function simplenews_user_insert($account) {
   // Use the email address to check if new account is already subscribed.
-  $subscriber = simplenews_subscriber_load_by_mail($edit['mail']);
+  $subscriber = simplenews_subscriber_load_by_mail($account['mail']);
   // If the user is subscribed, we update the subscriber with uid and language.
   if ($subscriber) {
-    $subscriber->uid = $edit['uid'];
-    $subscriber->langcode = $edit['language'];
+    $subscriber->uid = $account['uid'];
+    $subscriber->langcode = $account['language'];
     $subscriber->activated = 1;
     simplenews_subscriber_save($subscriber);
   }
 
   // Process subscription check boxes.
-  if (isset($edit['newsletters'])) {
-    $nl_tids = array_keys(array_filter($edit['newsletters']));
+  if (isset($account['newsletters'])) {
+    $nl_tids = array_keys(array_filter($account['newsletters']));
     if (!empty($nl_tids)) {
       $newsletters = simplenews_categories_load_multiple($nl_tids, array('show_all' => TRUE));
       foreach ($newsletters as $newsletter) {
-        simplenews_subscribe_user($account->mail, $newsletter->tid, FALSE, 'website', $edit['language']);
+        simplenews_subscribe_user($account->mail, $newsletter->tid, FALSE, 'website', $account['language']);
         backdrop_set_message(t('You have been subscribed to %newsletter.', array('%newsletter' => _simplenews_newsletter_name($newsletter))));
       }
     }
@@ -952,27 +952,17 @@ function simplenews_user_login(&$edit, $account) {
  * care of new accounts.
  * @see simplenews_user_insert()
  */
-function simplenews_user_presave(&$edit, $account, $category) {
-  switch ($category) {
-    case 'account':
-      // We only process existing accounts.
-      if (!empty($account->uid)) {
-        $subscriber = simplenews_subscriber_load_by_uid($account->uid);
-        if ($subscriber) {
-          // Update mail, status and language if they are changed.
-          if (isset($edit['mail'])) {
-            $subscriber->mail = $edit['mail'];
-          }
-          if (isset($edit['status']) && config_get('simplenews.settings', 'simplenews_sync_account')) {
-            $subscriber->activated = $edit['status'];
-          }
-          if (isset($edit['language'])) {
-            $subscriber->langcode = $edit['language'];
-          }
-          simplenews_subscriber_save($subscriber);
-        }
-      }
-      break;
+function simplenews_user_presave($account) {
+  // We only process existing accounts.
+  if (!empty($account->uid)) {
+    $subscriber = simplenews_subscriber_load_by_uid($account->uid);
+    if ($subscriber) {
+      // Update mail, status and language if they are changed.
+      $subscriber->mail = $account->mail;
+      $subscriber->activated = $account->status;
+      $subscriber->langcode = $account->langcode;
+      simplenews_subscriber_save($subscriber);
+    }
   }
 }
 
@@ -1042,60 +1032,10 @@ function simplenews_subscription_edit_access($account) {
  * Add simplenews subscription management form to account category 'Newsletters'
  */
 function simplenews_form_user_profile_form_alter(&$form, &$form_state) {
-  if ($form['#user_category'] == 'simplenews') {
-    $subscription = simplenews_subscriber_load_by_mail($form['#user']->mail);
-    module_load_include('inc', 'simplenews', 'includes/simplenews.subscription');
-    simplenews_subscriptions_account_form($form, $form_state, $subscription);
-    $form['subscriptions']['#title'] = t('Newsletter subscriptions');
-    unset($form['update'], $form['subscriptions']['mail']);
-  }
-}
-
-/**
- * Implements hook_user_view().
- */
-function simplenews_user_view($account, $build_mode) {
-  global $user;
-  if ($user->uid == $account->uid || user_access('administer users')) {
-    $account->content['simplenews'] = array(
-      '#type' => 'user_profile_category',
-      '#title' => t('Newsletters'),
-    );
-    // Collect newsletter to which the current user is subscribed.
-    // 'hidden' newsletters are not listed.
-    $newsletters = simplenews_category_get_visible();
-    $subscription = simplenews_subscriber_load_by_mail($account->mail);
-
-    foreach ($newsletters as $newsletter) {
-      if (isset($subscription->newsletter_subscription[$newsletter->tid]) && $subscription->newsletter_subscription[$newsletter->tid]->status == TRUE) {
-        $links[] = l(_simplenews_newsletter_name($newsletter), 'taxonomy/term/' . $newsletter->tid);
-      }
-    }
-    if (isset($links)) {
-      // @todo replace with theme('links', $links) to form a list of newsletters?
-      $links = implode(', ', $links);
-    }
-    else {
-      $links = t('None');
-    }
-
-    // When a user has no permission to subscribe and is not subscribed
-    // we do not display the 'no subscriptions' message.
-    if (user_access('subscribe to newsletters') || $links != t('None')) {
-      $account->content['simplenews']['subscriptions'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Subscribed to'),
-        '#markup' => $links,
-      );
-    }
-    if (user_access('subscribe to newsletters')) {
-      $account->content['simplenews']['my_newsletters'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => '',
-        '#markup' => t('Manage <a href="!url">subscriptions</a>', array('!url' => url('user/' . $account->uid . '/edit/simplenews'))),
-      );
-    }
-  }
+  $subscription = simplenews_subscriber_load_by_mail($form['#user']->mail);
+  module_load_include('inc', 'simplenews', 'includes/simplenews.subscription');
+  simplenews_subscriptions_account_form($form, $form_state, $subscription);
+  #unset($form['update'], $form['subscriptions']['mail']);
 }
 
 /**
@@ -1687,6 +1627,7 @@ function simplenews_subscriber_load_multiple($snids = array(), $conditions = arr
  * @ingroup subscriber
  */
 function simplenews_subscriber_save(&$subscriber) {
+  $account = user_load($subscriber->uid);
   if (!empty($subscriber->snid)) {
     db_update('simplenews_subscriber')
       ->condition('snid', $subscriber->snid)
@@ -1695,7 +1636,7 @@ function simplenews_subscriber_save(&$subscriber) {
       'activated' => (int) $subscriber->activated,
       'mail' => $subscriber->mail,
       'uid' => $subscriber->uid,
-      'language' => $subscriber->langcode,
+      'language' => $account->langcode,
       'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
     ))
       ->execute();
@@ -1707,7 +1648,7 @@ function simplenews_subscriber_save(&$subscriber) {
       'activated' => $subscriber->activated,
       'mail' => $subscriber->mail,
       'uid' => $subscriber->uid,
-      'language' => $subscriber->langcode,
+      'language' => $account->langcode,
       'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
       'created' => REQUEST_TIME,
     ));

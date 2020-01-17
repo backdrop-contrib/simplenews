@@ -66,7 +66,8 @@ function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber
 
   $form['subscriptions'] = array(
     '#type' => 'fieldset',
-    '#description' => t('Select your newsletter subscriptions.'),
+    '#description' => t('Select newsletters to subscribe.'),
+    '#collapsible' => TRUE,
   );
   $form['subscriptions']['newsletters'] = array(
     '#type' => 'checkboxes',
@@ -74,10 +75,11 @@ function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber
     '#default_value' => $default_value,
   );
 
-  $form['subscriptions']['#title'] = t('Current newsletter subscriptions');
+  $form['subscriptions']['#title'] = t('Newsletter subscriptions');
 
   // if we don't override #validate, see user_profile_form_validate
-  // adding an own #submit leads to the situation where backdrop omits execution of user_profile_form_submit completely
+  // adding an own #submit leads to the situation where Backdrop omits execution
+  // of user_profile_form_submit completely
   $form['#submit'][] = 'simplenews_subscriptions_account_form_submit';
 }
 
