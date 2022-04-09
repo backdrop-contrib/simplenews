@@ -49,7 +49,8 @@
  * @see simplenews_subscriptions_account_form_submit()
  */
 function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber) {
-
+  form_load_include($form_state, 'inc', 'simplenews', 'includes/simplenews.subscription');
+  
   $options = array();
   $default_value = array();
 
