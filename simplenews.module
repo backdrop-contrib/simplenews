@@ -892,7 +892,7 @@ function simplenews_user_insert($account) {
   // If the user is subscribed, we update the subscriber with uid and language.
   if ($subscriber) {
     $subscriber->uid = $account->uid;
-    $subscriber->langcode = $account->language;
+    $subscriber->language = $account->language;
     $subscriber->activated = 1;
     simplenews_subscriber_save($subscriber);
   }
@@ -952,7 +952,7 @@ function simplenews_user_presave($account) {
       // Update mail, status and language if they are changed.
       $subscriber->mail = $account->mail;
       $subscriber->activated = $account->status;
-      $subscriber->langcode = $account->langcode;
+      $subscriber->language = $account->langcode;
       simplenews_subscriber_save($subscriber);
     }
   }
@@ -1276,7 +1276,7 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
     $subscriber = new stdClass();
     $subscriber->mail = $mail;
     $subscriber->uid = $account->uid;
-    $subscriber->langcode = $preferred_language;
+    $subscriber->language = $preferred_language;
     $subscriber->activated = 1;
     simplenews_subscriber_save($subscriber);
   }
@@ -2812,7 +2812,7 @@ function simplenews_confirmation_send_combined() {
     if (!$subscriber) {
       $subscriber = new stdClass();
       $subscriber->mail = $mail;
-      $subscriber->langcode = $language->langcode;
+      $subscriber->language = $language->langcode;
       $subscriber->tids = array();
     }
     $params['context']['simplenews_subscriber'] = $subscriber;
@@ -2822,12 +2822,12 @@ function simplenews_confirmation_send_combined() {
     if ((count($changes) > 1 && $use_combined != 'never') || $use_combined == 'always') {
       $params['context']['changes'] = $changes;
       $key = 'subscribe_combined';
-      backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
+      backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
     }
     else {
       foreach ($changes as $tid => $key) {
         $params['context']['category'] = simplenews_category_load($tid);
-        backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
+        backdrop_mail('simplenews', $key, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
       }
     }
 
@@ -2865,7 +2865,7 @@ function simplenews_confirmation_send($action, $subscriber, $category) {
     $params['from'] = _simplenews_set_from();
     $params['context']['category'] = $category;
     $params['context']['simplenews_subscriber'] = $subscriber;
-    backdrop_mail('simplenews', $action, $subscriber->mail, $subscriber->langcode, $params, $params['from']['address']);
+    backdrop_mail('simplenews', $action, $subscriber->mail, $subscriber->language, $params, $params['from']['address']);
   }
 }
 

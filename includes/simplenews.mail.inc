@@ -124,7 +124,7 @@ function simplenews_send_test($node, $test_addresses) {
         $subscriber = new stdClass();
         $subscriber->uid = 0;
         $subscriber->mail = $mail;
-        $subscriber->langcode = $GLOBALS['language']->langcode;
+        $subscriber->language = $GLOBALS['language']->langcode;
       }
 
       if (!empty($account->uid)) {

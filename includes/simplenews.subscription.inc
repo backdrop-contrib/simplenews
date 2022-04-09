@@ -808,13 +808,13 @@ function simplenews_subscriptions_admin_form($form, &$form_state, $snid) {
       $form['language']['language'] = array(
         '#type' => 'item',
         '#title' => t('User language'),
-        '#markup' => isset($language_options[$subscriber->langcode]) ? $language_options[$subscriber->langcode] : $language_default,
+        '#markup' => isset($language_options[$subscriber->language]) ? $language_options[$subscriber->language] : $language_default,
       );
     }
     else {
       $form['language']['language'] = array(
         '#type' => 'select',
-        '#default_value' => $subscriber->langcode,
+        '#default_value' => $subscriber->language,
         '#options' => $language_options,
       );
     }
@@ -879,7 +879,7 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   $subscriber->activated = $form_state['values']['activated'];
   if (!$subscriber->uid) {
     if (isset($form_state['values']['language'])) {
-      $subscriber->langcode = $form_state['values']['language'];
+      $subscriber->language = $form_state['values']['language'];
     }
   }
   simplenews_subscriber_save($subscriber);

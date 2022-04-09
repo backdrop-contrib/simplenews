@@ -1166,7 +1166,7 @@ function simplenews_subscription_list_form() {
       'mail' => check_plain($subscriber->mail),
       'username' => isset($subscriber->uid) ? l($subscriber->name, 'user/' . $subscriber->uid) : check_plain($subscriber->name),
       'status' => theme('simplenews_status', array('source' => 'activated', 'status' => $subscriber->activated)),
-      'language' => check_plain($subscriber->langcode),
+      'language' => check_plain($subscriber->language),
       'operations' => l(t('edit'), 'admin/people/simplenews/users/edit/' . $subscriber->snid, array(), $destination),
     );
   }
