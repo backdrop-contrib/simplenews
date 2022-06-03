@@ -477,27 +477,22 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
       case SIMPLENEWS_PRIORITY_HIGHEST:
         $headers['Priority'] = 'High';
         $headers['X-Priority'] = '1';
-        $headers['X-MSMail-Priority'] = 'Highest';
         break;
       case SIMPLENEWS_PRIORITY_HIGH:
         $headers['Priority'] = 'urgent';
         $headers['X-Priority'] = '2';
-        $headers['X-MSMail-Priority'] = 'High';
         break;
       case SIMPLENEWS_PRIORITY_NORMAL:
         $headers['Priority'] = 'normal';
         $headers['X-Priority'] = '3';
-        $headers['X-MSMail-Priority'] = 'Normal';
         break;
       case SIMPLENEWS_PRIORITY_LOW:
         $headers['Priority'] = 'non-urgent';
         $headers['X-Priority'] = '4';
-        $headers['X-MSMail-Priority'] = 'Low';
         break;
       case SIMPLENEWS_PRIORITY_LOWEST:
         $headers['Priority'] = 'non-urgent';
         $headers['X-Priority'] = '5';
-        $headers['X-MSMail-Priority'] = 'Lowest';
         break;
     }
 
