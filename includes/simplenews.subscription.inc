@@ -50,7 +50,7 @@
  */
 function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber) {
   form_load_include($form_state, 'inc', 'simplenews', 'includes/simplenews.subscription');
-  
+
   $options = array();
   $default_value = array();
 
@@ -122,6 +122,10 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
 function simplenews_block_form($form, &$form_state, $tid) {
   global $user;
   $form = array();
+  $form['tid'] = array(
+    '#type' => 'hidden',
+    '#value' => $tid,
+  );
 
   $submit_text = t('Subscribe');
   if ($user->uid) {
@@ -182,6 +186,19 @@ function simplenews_block_form($form, &$form_state, $tid) {
 function simplenews_block_form_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['mail'])) {
     form_set_error('mail', t("The e-mail address you supplied is not valid."));
+  }
+  else {
+    $mail = $form_state['values']['mail'];
+    $simplenews_subscriber = simplenews_subscriber_load_by_mail($mail);
+    $tid = $form_state['input']['tid'];
+    // If subscription is already confirmed by user, then it's in tids array.
+    if ($simplenews_subscriber->tids[$tid]) {
+      form_set_error('mail', t("You are already subscribed to this newsletter."));
+    }
+    // If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
+    elseif ($simplenews_subscriber->newsletter_subscription[$tid]) {
+      form_set_error('mail', t("A confirmation email for previous subscription request to this newsletter is already sent, please check your inbox."));
+    }
   }
 }
 
