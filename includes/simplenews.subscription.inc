@@ -187,22 +187,24 @@ function simplenews_block_form_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['mail'])) {
     form_set_error('mail', t("The e-mail address you supplied is not valid."));
   }
-  // Prevent spam subscribe submissions.
+  // Prevent spam subscription attempts by anonymous users.
   else {
     $account = simplenews_subscriber_load_by_mail($form_state['values']['mail']);
-    $tid = $form_state['input']['tid'];
-    $newsletter = taxonomy_term_load($tid);
-
-    // If subscription is already confirmed by user, then it's in tids array.
-    if ($account->tids[$tid]) {
-      form_set_error('mail', t("You are already subscribed to <em>@newsletter</em> newsletter.", array('@newsletter' => $newsletter->name)));
-    }
-    /**
-     * If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
-     * $account->newsletter_subscription[$tid]->status == '0' means user cancelled their subscription.
-     */
-    elseif ($account->newsletter_subscription[$tid] && $account->newsletter_subscription[$tid]->status != '0') {
-      form_set_error('mail', t("A confirmation email for previous subscription request to <em>@newsletter</em> newsletter is already sent, please check your inbox.", array('@newsletter' => $newsletter->name)));
+    // Run further checks only for emails with subscription accounts already created.
+    if ($account && $account->uid == 0) {
+      $tid = $form_state['input']['tid'];
+      $newsletter = taxonomy_term_load($tid);
+      // If subscription is already confirmed by user, then it's in tids array.
+      if ($account->tids && isset($account->tids[$tid])) {
+        form_set_error('mail', t("You are already subscribed to <em>@newsletter</em> newsletter.", array('@newsletter' => $newsletter->name)));
+      }
+      /**
+       * If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
+       * $account->newsletter_subscription[$tid]->status == '0' means user cancelled their subscription.
+       */
+      elseif ($account->newsletter_subscription[$tid] && $account->newsletter_subscription[$tid]->status != '0') {
+        form_set_error('mail', t("A confirmation email for previous subscription request to <em>@newsletter</em> newsletter is already sent, please check your inbox.", array('@newsletter' => $newsletter->name)));
+      }
     }
   }
 }
@@ -347,26 +349,28 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
   if (!$valid_email) {
     form_set_error('mail', t('The e-mail address you supplied is not valid.'));
   }
-
+  
   $checked_newsletters = array_filter($form_state['values']['newsletters']);
   // Unless we're in update mode, at least one checkbox must be checked.
   if (!count($checked_newsletters) && $form_state['values']['op'] != t('Update')) {
     form_set_error('newsletters', t('You must select at least one newsletter.'));
   }
 
-  // Prevent spam subscribe submissions.
+  // Prevent spam subscription attempts by anonymous users.
   if ($form_state['values']['op'] == 'Subscribe') {
     $account = simplenews_subscriber_load_by_mail($form_state['values']['mail']);
-    foreach($form_state['values']['newsletters'] as $tid => $value) {
-      if ($value == TRUE) {
-        $newsletter = taxonomy_term_load($tid);
-        // If subscription is already confirmed by user, then it's in tids array.
-        if ($account->tids[$tid]) {
-          form_set_error('mail', t("You are already subscribed to <em>@newsletter</em> newsletter.", array('@newsletter' => $newsletter->name)));
-        }
-        // If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
-        elseif ($account->newsletter_subscription[$tid] && $account->newsletter_subscription[$tid]->status != '0') {
-          form_set_error('mail', t("A confirmation email for previous subscription request to <em>@newsletter</em> newsletter is already sent, please check your inbox.", array('@newsletter' => $newsletter->name)));
+    if ($account && $account->uid == 0) {
+      foreach($form_state['values']['newsletters'] as $tid => $value) {
+        if ($value == TRUE) {
+          $newsletter = taxonomy_term_load($tid);
+          // If subscription is already confirmed by user, then it's in tids array.
+          if ($account->tids && isset($account->tids[$tid])) {
+            form_set_error('mail', t("You are already subscribed to <em>@newsletter</em> newsletter.", array('@newsletter' => $newsletter->name)));
+          }
+          // If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
+          elseif ($account->newsletter_subscription[$tid] && $account->newsletter_subscription[$tid]->status != '0') {
+            form_set_error('mail', t("A confirmation email for previous subscription request to <em>@newsletter</em> newsletter is already sent, please check your inbox.", array('@newsletter' => $newsletter->name)));
+          }
         }
       }
     }
