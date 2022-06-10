@@ -776,7 +776,7 @@ function simplenews_subscription_list_add($form, &$form_state) {
   if (config_get('system.core', 'language_count') > 1) {
     $options[''] = t('Site default language');
     $languages = language_list('enabled');
-    foreach ($languages[1] as $langcode => $item) {
+    foreach ($languages as $langcode => $item) {
       $name = t($item->name);
       $options[$langcode] = $name . ($item->native != $name ? ' (' . $item->native . ')' : '');
     }
@@ -851,7 +851,7 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
     backdrop_set_message(t('The addresses were subscribed to the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
-    backdrop_set_message(t('No addresses were added.'));
+    form_set_error('mail', t("No addresses were added."));
   }
   if ($invalid) {
     $invalid = implode(", ", $invalid);
@@ -1067,9 +1067,9 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
     backdrop_set_message(t('The addresses were unsubscribed from the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
-    backdrop_set_message(t('No addresses were removed.'));
+    form_set_error('mail', t("No addresses were removed."));
   }
-  if ($invalid) {
+  if ($invalid[0] && !empty($invalid[0])) {
     $invalid = implode(", ", $invalid);
     backdrop_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
   }

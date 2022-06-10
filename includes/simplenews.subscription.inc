@@ -833,7 +833,7 @@ function simplenews_subscriptions_admin_form($form, &$form_state, $snid) {
 
   if ((config_get('system.core', 'language_count') > 1)) {
     $languages = language_list('enabled');
-    foreach ($languages[1] as $langcode => $item) {
+    foreach ($languages as $langcode => $item) {
       $name = t($item->name);
       $language_options[$langcode] = $name . ($item->native != $name ? ' (' . $item->native . ')' : '');
     }
@@ -893,7 +893,7 @@ function simplenews_subscriptions_admin_form_validate($form, &$form_state) {
     form_set_error('newsletters', t('You must select at least one newsletter.'));
   }
   $languages = language_list('enabled');
-  if (!empty($form_state['values']['language']) && !isset($languages[1][$form_state['values']['language']])) {
+  if (!empty($form_state['values']['language']) && !isset($languages[$form_state['values']['language']])) {
     form_set_error('language', t('Please choose a language from the list.'));
   }
 }
