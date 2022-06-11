@@ -349,7 +349,7 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
   if (!$valid_email) {
     form_set_error('mail', t('The e-mail address you supplied is not valid.'));
   }
-  
+
   $checked_newsletters = array_filter($form_state['values']['newsletters']);
   // Unless we're in update mode, at least one checkbox must be checked.
   if (!count($checked_newsletters) && $form_state['values']['op'] != t('Update')) {
