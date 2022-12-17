@@ -270,7 +270,16 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
   public function nextSource() {
     // Get the current mail spool row and update the internal pointer to the
     // next row.
-    $return = each($this->spool_list);
+    $key = key($this->spool_list);
+    $value = current($this->spool_list);
+    $return = is_null($key) ? false : [
+      1        => $value,
+      'value'    => $value,
+      0        => $key,
+      'key'    => $key,
+    ];
+    next($this->spool_list);
+
     // If we're done, return false.
     if (!$return) {
       return FALSE;
