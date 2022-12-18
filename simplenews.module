@@ -764,7 +764,7 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
       $tid = taxonomy_term_load_multiple(taxonomy_get_tree(arg(3))[0]->tid);
       $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE {tid} = $tid->tid")->fetchField();
       if (!empty($found)) {
-        backdrop_set_message(t('At least one newsletter category must exist. If you want to delete the newsletter category, disable the Simplenews module instead.'), 'error');
+        backdrop_set_message(t('If you want to delete the newsletter category, disable the Simplenews module first.'), 'error');
         backdrop_goto('admin/structure/taxonomy');
       }
     }
@@ -1465,7 +1465,7 @@ function simplenews_get_subscriptions_by_list($tid) {
  *
  * @ingroup subscription
  */
-function simplenews_subscription_update($conditions = array(), $data) {
+function simplenews_subscription_update($conditions, $data) {
   $query = db_update('simplenews_subscription');
   foreach ($conditions as $key => $condition) {
     $query->condition($key, $condition);
