@@ -296,20 +296,6 @@ function simplenews_node_type_delete($info) {
 }
 
 /**
- * Implements hook_node_type_update().
- */
-function simplenews_node_type_update($info) {
-  backdrop_static_reset('simplenews_get_content_types');
-  if (simplenews_check_node_types($info->type)) {
-    simplenews_add_term_field($info);
-  }
-  else {
-    // Don't remove the field. This leads to data loss.
-    // simplenews_remove_term_field($info);
-  }
-}
-
-/**
  * Implements hook_config_info().
  */
 function simplenews_config_info() {
@@ -317,17 +303,6 @@ function simplenews_config_info() {
     'label' => t('Module name settings'),
     'group' => t('Configuration'),
   );
-}
-
-/**
- * Implements hook_node_type_insert().
- */
-function simplenews_node_type_insert($info) {
-  // Avoid using simplenews_check_node_type() because the node type cache
-  // has not been cleared yet.
-  if (config_get('simplenews.settings', 'simplenews_content_type_' . $info->type)) {
-    simplenews_add_term_field($info);
-  }
 }
 
 /**
@@ -718,6 +693,26 @@ function simplenews_form_node_type_form_alter(&$form, $form_state) {
     '#title' => t('Use as simplenews newsletter'),
     '#default_value' => config_get('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type),
   );
+  $form['#submit'][] = 'simplenews_form_node_type_form_submit';
+}
+
+/**
+ * Custom submit handler for simplenews_form_node_type_form_alter().
+ *
+ * @param $form
+ * @param $form_state
+ */
+function simplenews_form_node_type_form_submit(&$form, $form_state) {
+  $info['type'] = $form_state['values']['type'];
+  $info = (object) $info;
+  if (!empty($form_state['input']['simplenews_content_type'])) {
+    config_set('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type, $form_state['input']['simplenews_content_type']);
+    simplenews_add_term_field($info);
+  }
+  else {
+    config_clear('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type);
+    simplenews_remove_term_field($info);
+  }
 }
 
 /**
@@ -766,7 +761,7 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
   }
   // Prevent creating taxonomy terms and instead redirect
   // to Newsletter configuration page to add categories.
-  if ($form_id == 'taxonomy_form_term' && $form['#action'] == '/admin/structure/taxonomy/newsletter/add') {
+  if ($form_id == 'taxonomy_form_term' && strpos($form['#action'], '/admin/structure/taxonomy/newsletter/add') !== false) {
     backdrop_goto('admin/config/services/simplenews/add');
   }
 }
