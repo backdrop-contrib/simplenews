@@ -602,15 +602,18 @@ function simplenews_add_term_field($type) {
         ),
       ),
     );
-    $field = field_create_field($field);
+    field_create_field($field);
   }
   if (empty($instance)) {
+    // Get the smallest newsletter tid since there is no default one.
+    $tid = db_query('SELECT MIN(tid) as min_id FROM {simplenews_category}')->fetchField();
     $instance = array(
       'label' => t('Newsletter category'),
       'field_name' => $field_name,
       'bundle' => $type->type,
       'entity_type' => 'node',
       'required' => TRUE,
+      'default_value' => array(array('tid' => $tid)),
       'widget' => array(
         'type' => 'options_buttons',
       ),
