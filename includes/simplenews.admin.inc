@@ -697,6 +697,12 @@ function simplenews_admin_category_form_submit($form, &$form_state) {
  * @see simplenews_admin_category_delete_submit()
  */
 function simplenews_admin_category_delete($form, &$form_state, $category) {
+  $count = db_query('SELECT count(tid) as min_id FROM {simplenews_category}')->fetchField();
+  if ($count == '1') {
+    backdrop_set_message(t('At least one newsletter must exist. If you want to delete all newsletters, disable the Simplenews module instead.'), 'error');
+    backdrop_goto('admin/config/services/simplenews');
+  }
+
   // Store some category values for submit handling.
   $form = array();
   $form['tid'] = array(

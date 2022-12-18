@@ -125,13 +125,10 @@ function simplenews_menu() {
     'access arguments' => array('administer newsletters'),
     'file' => 'includes/simplenews.admin.inc',
   );
-
-
   $items['admin/config/services/simplenews/categories'] = array(
     'title' => 'Newsletters',
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-
   $items['admin/config/services/simplenews/categories/%simplenews_category/edit'] = array(
     'title' => 'Newsletters',
     'page callback' => 'backdrop_get_form',
@@ -155,7 +152,6 @@ function simplenews_menu() {
     'file' => 'includes/simplenews.admin.inc',
     'weight' => -9,
   );
-
   $items['admin/content/simplenews/subscriptions/delete'] = array(
     'title' => 'Delete',
     'type' => MENU_CALLBACK,
@@ -245,7 +241,6 @@ function simplenews_menu() {
     'file path' => backdrop_get_path('module', 'simplenews'),
     'type' => MENU_LOCAL_TASK,
   );
-
   $items['newsletter/confirm'] = array(
     'title' => 'Confirm newsletter subscriptions',
     'type' => MENU_CALLBACK,
@@ -756,16 +751,54 @@ function simplenews_taxonomy_term_delete(TaxonomyTerm $term) {
  * Implements hook_form_alter().
  */
 function simplenews_form_alter(&$form, &$form_state, $form_id) {
+  global $base_url;
   // Add Simplenews settings to simplenews newsletter node form.
   if (!empty($form['#node_edit_form'])) {
     if (in_array($form['type']['#value'], simplenews_get_content_types())) {
       _simplenews_node_form($form, $form_state);
     }
   }
-  // Prevent creating taxonomy terms and instead redirect
-  // to Newsletter configuration page to add categories.
-  if ($form_id == 'taxonomy_form_term' && strpos($form['#action'], '/admin/structure/taxonomy/newsletter/add') !== false) {
-    backdrop_goto('admin/config/services/simplenews/add');
+  // Taxonomy pages redirections.
+  if ($form_id == 'taxonomy_vocabulary_confirm_delete') {
+    if (isset(taxonomy_get_tree(arg(3))[0]->tid)) {
+      $tid = taxonomy_term_load_multiple(taxonomy_get_tree(arg(3))[0]->tid);
+      $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE {tid} = $tid->tid")->fetchField();
+      if (!empty($found)) {
+        backdrop_set_message(t('At least one newsletter category must exist. If you want to delete the newsletter category, disable the Simplenews module instead.'), 'error');
+        backdrop_goto('admin/structure/taxonomy');
+      }
+    }
+  }
+  if ($form_id == 'taxonomy_form_term') {
+    // Prevent creating taxonomy terms and instead redirect to Newsletter configuration page to add categories.
+    if (strpos($form['#action'], '/admin/structure/taxonomy/newsletter/add') !== false) {
+      backdrop_goto('admin/config/services/simplenews/add');
+    }
+  }
+  if (arg(0) == 'taxonomy' && is_numeric(arg(2))) {
+    $tid = arg(2);
+    $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE {tid} = $tid")->fetchField();
+    if (!empty($found)) {
+      if (arg(3) == 'edit') {
+        // For some reason backdrop_goto($path) is not working;
+        $url = $base_url . '/admin/config/services/simplenews/categories/' . $tid . '/edit';
+        header('Location: ' . $url);
+      }
+      if ($form_id == 'taxonomy_term_confirm_delete') {
+        $url = $base_url . '/admin/config/services/simplenews/categories/' . $tid . '/delete';
+        header('Location: ' . $url);
+      }
+    }
+  }
+
+  // Hide unnecessary option item if there are more than one newsletter category term.
+  if ($form_id == 'field_ui_field_edit_form' && isset($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options'])) {
+    if (count($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options']) > '1') {
+      unset($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options']['_none']);
+    }
+    else {
+      backdrop_set_message(t('Please create at least one <a target="_blank" href="@newsletters">newsletter</a>, and then refresh this page to select a Newsletter category.', array('@newsletters' => '/admin/config/services/simplenews/add')), 'error');
+    }
   }
 }
 
