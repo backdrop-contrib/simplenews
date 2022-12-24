@@ -99,9 +99,10 @@ Related modules
    https://backdropcms.org/project/maillog
 
 
-License
--------
-This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
+Known-issues
+------------
+As discussed on https://github.com/backdrop-contrib/simplenews/issues/16#issuecomment-1364366461 there is no currently an upgrade path from Drupal 7. 
+
 
 Credits
 -------
@@ -120,5 +121,3 @@ Current maintainers
 Simplenews is ported and supported by Backdrop Afficionados at AltaGrade (https://www.altagrade.com):
 
 * Alan Mels (https://github.com/alanmels)
-* Alex Shapka (https://github.com/alexshapka)
-* Nick Onom (https://github.com/nickonom)
