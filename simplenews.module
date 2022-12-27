@@ -762,7 +762,7 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'taxonomy_vocabulary_confirm_delete') {
     if (isset(taxonomy_get_tree(arg(3))[0]->tid)) {
       $tid = taxonomy_term_load_multiple(taxonomy_get_tree(arg(3))[0]->tid);
-      $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE {tid} = $tid->tid")->fetchField();
+      $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE tid = $tid->tid")->fetchField();
       if (!empty($found)) {
         backdrop_set_message(t('If you want to delete the newsletter category, disable the Simplenews module first.'), 'error');
         backdrop_goto('admin/structure/taxonomy');
@@ -777,7 +777,7 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
   }
   if (arg(0) == 'taxonomy' && is_numeric(arg(2))) {
     $tid = arg(2);
-    $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE {tid} = $tid")->fetchField();
+    $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE tid = $tid")->fetchField();
     if (!empty($found)) {
       if (arg(3) == 'edit') {
         // For some reason backdrop_goto($path) is not working;
