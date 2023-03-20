@@ -634,6 +634,9 @@ function simplenews_send_status_update() {
         ->condition('nid', $nid)
         ->fields(array('status' => SIMPLENEWS_STATUS_SEND_READY))
         ->execute();
+      // Clear the node cache for this node so that the status shows correctly
+      // when loaded. 
+      cache_clear_all($nid, 'cache_entity_node');
     }
   }
 }

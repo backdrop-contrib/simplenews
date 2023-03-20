@@ -2070,4 +2070,7 @@ function simplenews_node_tab_send_form_submit($form, &$form_state) {
     simplenews_newsletter_save($newsletter);
     backdrop_set_message(t('The newsletter will be sent when the content is published.'));
   }
+  // Clear the node cache for this node so that the status shows correctly when
+  // loaded. 
+  cache_clear_all($node->nid, 'cache_entity_node');
 }
