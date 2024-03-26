@@ -356,11 +356,6 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   protected $node;
 
   /**
-   * The node object.
-   */
-  protected $node;
-
-  /**
    * The cached build render array.
    */
   protected $build;
