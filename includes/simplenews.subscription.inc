@@ -67,8 +67,10 @@ function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber
 
   $form['subscriptions'] = array(
     '#type' => 'fieldset',
-    '#description' => t('Select newsletters to subscribe.'),
+    '#description' => t('Select newsletters to subscribe:'),
     '#collapsible' => TRUE,
+    '#group' => 'additional_settings',
+    '#weight' => 5,
   );
   $form['subscriptions']['newsletters'] = array(
     '#type' => 'checkboxes',
