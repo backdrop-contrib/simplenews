@@ -356,6 +356,11 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   protected $node;
 
   /**
+   * The node object.
+   */
+  protected $node;
+
+  /**
    * The cached build render array.
    */
   protected $build;
@@ -386,6 +391,13 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    * @var SimplenewsSourceCacheInterface
    */
   protected $cache;
+
+  /**
+   * Per https://github.com/backdrop-contrib/simplenews/issues/24
+   * @var
+   */
+  protected $uid;
+  protected $original_language;
 
   /**
    * Implements SimplenewsSourceInterface::_construct();
