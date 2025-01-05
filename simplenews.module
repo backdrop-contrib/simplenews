@@ -791,11 +791,13 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
       }
     }
   }
-
   // Hide unnecessary option item if there are more than one newsletter category term.
-  if ($form_id == 'field_ui_field_edit_form' && isset($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options'])) {
-    if (count($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options']) > '1') {
-      unset($form['instance']['default_value_widget']['field_simplenews_term'][LANGUAGE_NONE]['#options']['_none']);
+  if ($form_id == 'field_ui_field_edit_form') {
+    $simplenews_term = config_get('simplenews.settings', 'simplenews_category_field');
+    if (isset($form['instance']['default_value_widget'][$simplenews_term][LANGUAGE_NONE]['#options'])) {
+      if (count($form['instance']['default_value_widget'][$simplenews_term][LANGUAGE_NONE]['#options']) > '1') {
+        unset($form['instance']['default_value_widget'][$simplenews_term][LANGUAGE_NONE]['#options']['_none']);
+      }
     }
     else {
       backdrop_set_message(t('Please create at least one <a target="_blank" href="@newsletters">newsletter</a>, and then refresh this page to select a Newsletter category.', array('@newsletters' => '/admin/config/services/simplenews/add')), 'error');

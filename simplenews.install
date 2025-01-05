@@ -375,16 +375,22 @@ function simplenews_install() {
  * Implements hook_uninstall().
  */
 function simplenews_uninstall() {
-  // Remove Simplenews configuration file.
-  config('simplenews.settings')->delete();
-  // Delete Simplenews taxonomy field.
-  field_delete_field('field_simplenews_term');
+  $config = config('simplenews.settings');
+
+  // Only delete Simplenews taxonomy field if was added by this module.
+  if ($config->get('simplenews_category_field') == 'field_simplenews_term') {
+    field_delete_field('field_simplenews_term');
+  }
+
   // Delete DB tables.
   db_delete('simplenews_mail_spool');
   db_delete('simplenews_newsletter');
   db_delete('simplenews_category');
   db_delete('simplenews_subscription');
   db_delete('simplenews_subscriber');
+
+  // Remove Simplenews configuration file.
+  $config->delete();
 }
 
 /**
