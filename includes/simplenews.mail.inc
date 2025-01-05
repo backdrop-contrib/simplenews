@@ -311,8 +311,8 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
       watchdog('simplenews', '%success emails sent, %fail failed.', array('%success' => $count_success, '%fail' => $count_fail));
     }
 
-    config_set('simplenews.settings', 'simplenews_last_cron', REQUEST_TIME);
-    config_set('simplenews.settings', 'simplenews_last_sent', $count_success);
+    state_set('simplenews_last_cron', REQUEST_TIME);
+    state_set('simplenews_last_sent', $count_success);
 
     simplenews_revert_user();
     return $count_success;
@@ -635,7 +635,7 @@ function simplenews_send_status_update() {
         ->fields(array('status' => SIMPLENEWS_STATUS_SEND_READY))
         ->execute();
       // Clear the node cache for this node so that the status shows correctly
-      // when loaded. 
+      // when loaded.
       cache_clear_all($nid, 'cache_entity_node');
     }
   }

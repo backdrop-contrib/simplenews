@@ -137,9 +137,10 @@ function simplenews_admin_issues() {
     '#validate' => array('simplenews_admin_issues_validate'),
   );
 
-  if ($config->get('simplenews_last_cron')) {
+  if ($last_cron = state_get('simplenews_last_cron')) {
+    $last_sent = state_get('simplenews_last_sent');
     $form['last_sent'] = array(
-      '#markup' => '<p>' . format_plural($config->get('simplenews_last_sent'), 'Last batch: 1 mail sent at !time.', 'Last batch: !count mails sent at !time.', array('!time' => format_date($config->get('simplenews_last_cron'), 'small'), '!count' => $config->get('simplenews_last_sent'))) . "</p>\n",
+      '#markup' => '<p>' . format_plural($last_sent, 'Last batch: 1 mail sent at !time.', 'Last batch: !count mails sent at !time.', array('!time' => format_date($last_cron, 'small'), '!count' => $last_sent)) . "</p>\n",
     );
   }
   // Table header. Used as tablesort default
@@ -285,7 +286,7 @@ function simplenews_issue_send($nids) {
   // If there were any newsletters sent, display a message.
   if (!empty($sent_nodes)) {
     $conditions = array('nid' => array_keys($sent_nodes));
-    // Attempt to send immediatly, if configured to do so.
+    // Attempt to send immediately, if configured to do so.
     if (simplenews_mail_attempt_immediate_send($conditions)) {
       backdrop_set_message(t('Sent the following newsletters: %titles.', array('%titles' => implode(', ', $sent_nodes))));
     }
