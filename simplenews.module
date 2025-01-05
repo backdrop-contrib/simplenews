@@ -1626,9 +1626,11 @@ function simplenews_subscriber_load_multiple($snids = array(), $conditions = arr
 
     $subscribers = $query->execute()->fetchAllAssoc('snid');
     if (!empty($subscribers)) {
-      // Initialize default values and unserialize.
+      // Initialize default values and expand.
       foreach ($subscribers as $subscriber) {
-        $subscriber->changes = unserialize($subscriber->changes);
+        if ($subscriber->changes != NULL) {
+          $subscriber->changes = json_decode($subscriber->changes);
+        }
         $subscriber->tids = array();
       }
 

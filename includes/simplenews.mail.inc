@@ -435,7 +435,7 @@ function simplenews_get_spool($limit = SIMPLENEWS_UNLIMITED, $conditions = array
     }
     foreach ($query->execute() as $message) {
       if (backdrop_strlen($message->data)) {
-        $message->data = unserialize($message->data);
+        $message->data = json_decode($message->data);
       }
       else {
         $message->data = simplenews_subscriber_load_by_mail($message->mail);
