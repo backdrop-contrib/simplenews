@@ -1379,12 +1379,18 @@ function simplenews_admin_settings_newsletter_validate($form, &$form_state) {
  */
 function simplenews_admin_settings_mail($form, &$form_state) {
   $config = config('simplenews.settings');
-  $address_default = config_get('system.core', 'site_mail');
   $form = array();
   $form['#config'] = 'simplenews.settings';
 
   $form['markup'] = array(
     '#markup' => '<ul class="action-links"><li><a href="/admin/people/simplenews">Manage newsletter subscriptions</a></li></ul>',
+  );
+
+  $form['excluded_domains'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Exclude e-mail servers'),
+    '#default_value' => $config->get('excluded_domains'),
+    '#description' => t('Some email servers have strict anti-spam policies and may reject your newsletters for various reasons, such as improperly configured SPF, DMARC, or DKIM records for your domain. To prevent repeated delivery attempts and the risk of being permanently blocklisted, it’s recommended to temporarily exclude users with email addresses hosted by these servers until the issue is fully addressed. Please enter the domain names, separating them with commas (e.g., att.com, yahoo.com, gmail.com).'),
   );
 
   $form['simplenews_mail_backend']['simplenews_use_cron'] = array(

@@ -43,7 +43,7 @@ function simplenews_add_node_to_spool($node) {
 }
 
 /**
- * Send mail spool immediatly if cron should not be used.
+ * Send mail spool immediately if cron should not be used.
  *
  * @param $conditions
  *   (Optional) Array of spool conditions which are applied to the query.
@@ -65,7 +65,7 @@ function simplenews_mail_attempt_immediate_send(array $conditions = array(), $us
       $operations[] = array('simplenews_mail_spool', array($throttle, $conditions));
     }
 
-    // Add separate operations to clear the spool and updat the send status.
+    // Add separate operations to clear the spool and update the sent status.
     $operations[] = array('simplenews_clear_spool', array());
     $operations[] = array('simplenews_send_status_update', array());
 
@@ -77,7 +77,7 @@ function simplenews_mail_attempt_immediate_send(array $conditions = array(), $us
     batch_set($batch);
   }
   else {
-    // Send everything that matches the conditions immediatly.
+    // Send everything that matches the conditions immediately.
     simplenews_mail_spool(SIMPLENEWS_UNLIMITED, $conditions);
     simplenews_clear_spool();
     simplenews_send_status_update();
@@ -204,7 +204,7 @@ function simplenews_send_source(SimplenewsSourceInterface $source) {
  * Individual newsletter emails are stored in database spool.
  * Sending is triggered by cron or immediately when the node is saved.
  * Mail data is retrieved from the spool, rendered and send one by one
- * If sending is successful the message is marked as send in the spool.
+ * If sending is successful the message is marked as sent in the spool.
  *
  * @todo: Redesign API to allow language counter in multilingual sends.
  *
@@ -224,6 +224,19 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
 
   // Send pending messages from database cache.
   $spool_list = simplenews_get_spool($limit, $conditions);
+
+  // Clear users with excluded domain e-mail addresses.
+  $excluded_domains = config_get('simplenews.settings', 'excluded_domains');
+  $excluded_domains = array_map('trim', explode(',', $excluded_domains));
+  foreach ($spool_list as $id => $account) {
+    $domain = explode('@', $account->mail)[1];
+    foreach ($excluded_domains as $excluded_domain) {
+      if (str_contains($domain, $excluded_domain)) {
+        unset($spool_list[$id]);
+      }
+    }
+  }
+
   if ($spool_list) {
 
     // Switch to the anonymous user.
@@ -334,6 +347,7 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
  * @ingroup spool
  */
 function simplenews_save_spool($spool) {
+
   $status = isset($spool['status']) ? $spool['status'] : SIMPLENEWS_SPOOL_PENDING;
   $time = isset($spool['time']) ? $spool['time'] : REQUEST_TIME;
 
