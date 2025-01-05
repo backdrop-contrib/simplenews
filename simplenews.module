@@ -309,7 +309,7 @@ function simplenews_node_view($node, $view_mode) {
     return;
   }
 
-  // Only do token replacements for view modes other than the our own email view
+  // Only do token replacements for view modes other than the email view
   // modes. Token replacements for them will happen later on.
   if (strpos($view_mode, 'email_') !== FALSE) {
     return;
@@ -458,7 +458,7 @@ function simplenews_node_update($node) {
     $node->simplenews->tid = $terms[0]['tid'];
   }
 
-  // Check if the newsletter is set to send on publish and needs to be send.
+  // Check if the newsletter is set to send on publish and needs to be sent.
   if ($node->simplenews->status == SIMPLENEWS_STATUS_SEND_PUBLISH && $node->status == NODE_PUBLISHED) {
     module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
     simplenews_add_node_to_spool($node);
@@ -1500,7 +1500,7 @@ function simplenews_subscription_save($subscription) {
  * Delete subscriptions.
  *
  * @param $conditions
- *   An associative array of conditions matching the records to be delete.
+ *   An associative array of conditions matching the records to be deleted.
  *   Example: array('tid' => 5, 'snid' => 12)
  *   Delete the subscription of subscriber 12 to newsletter tid 5.
  *
@@ -1913,15 +1913,6 @@ function simplenews_category_delete($category) {
     simplenews_subscription_delete(array('tid' => $category->tid));
     backdrop_set_message(t('All subscriptions to newsletter %newsletter have been deleted.', array('%newsletter' => _simplenews_newsletter_name($category))));
 
-    /*
-    AltaGrade delete if not needed.
-    // Delete subscription block
-    db_delete('block')
-      ->condition('module', 'simplenews')
-      ->condition('delta', $category->tid)
-      ->execute();
-      */
-
     db_delete('simplenews_category')
       ->condition('tid', $category->tid)
       ->execute();
@@ -2040,65 +2031,6 @@ function simplenews_private_key() {
 }
 
 /**
- * Implements hook_help().
- *
- * @todo Rewrite help text to match the new terminology, the new data architecture, the new admin pages, the news node-form interface.
- */
-function simplenews_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#simplenews':
-      $help = "<p>" . t('Simplenews publishes and sends newsletters to lists of subscribers. Both anonymous and authenticated users can opt-in to different mailing lists.') . "</p>\n";
-      $help .= "<p>" . t('Simplenews uses nodes for <strong>newsletter issues</strong>. Newsletter issues are grouped by a <strong>newsletter taxonomy term</strong>. Node type and vocabulary are selectable. A newsletter is send to all email addresses which are subscribed to the newsletter. Newsletter issues can be sent only once. Large mailings should be sent by cron to balance the mailserver load.') . "</p>\n";
-      $help .= "<p>" . t('Simplenews adds elements to the newsletter node add/edit form to manage newsletter format and sending of the newsletter issue. A newsletter issue can be sent for test before sending officially.') . "</p>\n";
-      $help .= "<p>" . t('Both anonymous and authenticated users can <strong>opt in and opt out</strong> to a newsletter. A confirmation message is sent to anonymous users when they (un)subscribe. Users can (un)subscribe using a form and a block. A <strong>subscription block</strong> is available for each newsletter offering a subscription form, a link to recent newsletters and RSS feed. Email addresses can also be imported and exported via the subscription administration pages.') . "</p>\n";
-      $help .= "<h2>" . t('Configuration') . "</h2>\n";
-      $help .= '<ul>';
-      if (user_access('administer permissions')) {
-        $help .= '<li>' . l(t('Configure permissions'), 'admin/people/permissions', array('fragment' => 'module-simplenews')) . "</li>\n";
-      }
-      if (user_access('administer simplenews settings')) {
-        $help .= '<li>' . l(t('Configure Simplenews'), 'admin/config/services/simplenews/settings') . "</li>\n";
-      }
-      if (user_access('administer blocks')) {
-        $help .= '<li>' . t('Enable a newsletter <a href="@admin_blocks">subscription block</a>.', array('@admin_blocks' => url('admin/structure/block'))) . "</li>\n";
-      }
-      if (user_access('administer simplenews settings')) {
-        $help .= '<li>' . t('Manage your <a href="@newsletters">newsletters</a>, <a href="@sent">sent newsletters</a> and <a href="@subscriptions">subscriptions</a>.', array('@newsletters' => url('admin/config/services/simplenews'), '@sent' => url('admin/content/simplenews'), '@subscriptions' => url('admin/people/simplenews'))) . "</li>\n";
-      }
-      $help .= '</ul>';
-
-      $help .= "<p>" . t('For more information, see the online handbook entry for <a href="@handbook">Simplenews</a>.', array('@handbook', 'http://drupal.org/node/197057')) . "</p>\n";
-      return $help;
-    case 'node/add/simplenews':
-      $help = '<ul>';
-      $help .= '<li>' . t('Add this newsletter issue to a newsletter by selecting a newsletter from the select list. To send this newsletter issue, first save the node, then use the "Newsletter" tab.') . "</li>\n";
-      if (user_access('administer simplenews settings')) {
-        $help .= '<li>' . t('Set default send options at <a href="@configuration">Administration > Configuration > Web services > Newsletters</a>.', array('@configuration' => url('admin/config/services/simplenews'))) . "</li>\n";
-      }
-      if (user_access('administer newsletters')) {
-        $help .= '<li>' . t('Set newsletter specific options at <a href="@configuration">Administration > Content > Newsletters</a>.', array('@configuration' => url('admin/content/simplenews'))) . "</li>\n";
-      }
-      $help .= '</ul>';
-      return $help;
-    case 'admin/config/services/simplenews/newsletter':
-      $help = '<ul>';
-      $help .= '<li>' . t('These settings are default to all newsletters. Newsletter specific settings can be found at the <a href="@page">newsletter\'s settings page</a>.', array('@page' => url('admin/config/services/simplenews'))) . "</li>\n";
-      $help .= '<li>' . t('Install <a href="!mime_mail_url">Mime Mail</a> or <a href="!html_mail_url">HTML Mail</a> to send HTML emails or emails with attachments (both plain text and HTML).', array('!mime_mail_url' => 'http://drupal.org/project/mimemail', '!html_mail_url' => 'http://drupal.org/project/htmlmail')) . "</li>\n";
-      $help .= '</ul>';
-      return $help;
-    case 'admin/config/services/simplenews':
-      $help = '<p>' . t('Newsletter allow you to send periodic e-mails to subscribers. See <a href="!manage_subscribers">Newsletter subscriptions</a> for a listing of the subscribers', array('!manage_subscribers' => url('admin/people/simplenews')));
-      return $help;
-    case 'admin/config/services/simplenews/add':
-      $help = '<p>' . t('You can create different newsletters (or subjects) to categorize your news (e.g., Cats news, Dogs news, ...).') . "</p>\n";
-      return $help;
-    case 'admin/structure/types/manage/simplenews/display':
-      $help = '<p>' . t("'Plain' display settings apply to the content of emails send in plain text format. 'HTML' display settings apply to both HTML and plain text alternative content of emails send in HTML format.") . "</p>\n";
-      return $help;
-  }
-}
-
-/**
  * Helper function to translate a newsletter name if required.
  *
  * @param object $newsletter
@@ -2170,51 +2102,51 @@ function simplenews_format_options() {
  */
 function simplenews_variable_info($options) {
   $variable['simplenews_confirm_subscribe_subject'] = array(
-    'title' => t('Simplenews confirmation subject'),
+    'title' => t('SimpleNews confirmation subject'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_subscribe_unsubscribed'] = array(
-    'title' => t('Simplenews subscription confirmation body'),
+    'title' => t('SimpleNews subscription confirmation body'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_subscribe_subscribed'] = array(
-    'title' => t('Simplenews subscribed confirmation body (already subscribed)'),
+    'title' => t('SimpleNews subscribed confirmation body (already subscribed)'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_unsubscribe_subscribed'] = array(
-    'title' => t('Simplenews unsubscription confirmation body'),
+    'title' => t('SimpleNews unsubscription confirmation body'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_unsubscribe_unsubscribed'] = array(
-    'title' => t('Simplenews unsubscription confirmation body (not subscribed)'),
+    'title' => t('SimpleNews unsubscription confirmation body (not subscribed)'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_subject'] = array(
-    'title' => t('Simplenews combined confirmation subject'),
+    'title' => t('SimpleNews combined confirmation subject'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_body'] = array(
-    'title' => t('Simplenews combined confirmation body'),
+    'title' => t('SimpleNews combined confirmation body'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_body_unchanged'] = array(
-    'title' => t('Simplenews combined confirmation body when there are no changes.'),
+    'title' => t('SimpleNews combined confirmation body when there are no changes.'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_line_subscribe_unsubscribed'] = array(
-    'title' => t('Simplenews combined confirmation subscribe line'),
+    'title' => t('SimpleNews combined confirmation subscribe line'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_line_subscribe_subscribed'] = array(
-    'title' => t('Simplenews combined confirmation already subscribed line'),
+    'title' => t('SimpleNews combined confirmation already subscribed line'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_line_unsubscribe_subscribed'] = array(
-    'title' => t('Simplenews combined confirmation unsubscribe line'),
+    'title' => t('SimpleNews combined confirmation unsubscribe line'),
     'localize' => TRUE,
   );
   $variable['simplenews_confirm_combined_line_unsubscribe_unsubscribed'] = array(
-    'title' => t('Simplenews combined confirmation not subscribed line'),
+    'title' => t('SimpleNews combined confirmation not subscribed line'),
     'localize' => TRUE,
   );
   return $variable;
@@ -2354,7 +2286,7 @@ function simplenews_theme() {
 }
 
 /**
- * Process variables to format the simplenews block.
+ * Process variables to format the SimpleNews block.
  *
  * Collect data and apply access restrictions.
  *
@@ -2557,7 +2489,7 @@ function template_preprocess_simplenews_newsletter_footer(&$variables) {
 }
 
 /**
- * Access callback; Acces to Newsletter tab page.
+ * Access callback; Access to Newsletter tab page.
  */
 function simplenews_node_tab_access($node) {
   return simplenews_check_node_types($node->type) && user_access('send newsletter');
@@ -2625,7 +2557,7 @@ function simplenews_field_extra_fields() {
 /**
  * Implements hook_node_access().
  *
- * Don't allow deletion when a newsletter is pending
+ * Don't allow deletion when a newsletter is pending.
  */
 function simplenews_node_access($node, $op, $account) {
   if ($op == 'delete') {
@@ -2666,7 +2598,7 @@ function simplenews_cronapi($op) {
 }
 
 /**
- * Returns TRUE if the newsletter category requires double opt in.
+ * Returns TRUE if the newsletter category requires double opt-in.
  *
  * @ingroup newsletter
  */
@@ -2684,7 +2616,7 @@ function simplenews_require_double_opt_in($tid, $account) {
 }
 
 /**
- * Returns the available simplenews sources.
+ * Returns the available SimpleNews sources.
  *
  * @ingroup source
  */
@@ -2879,7 +2811,7 @@ function simplenews_confirmation_send_combined() {
 /**
  * Send a confirmation mail.
  *
- * Either sends a mail immediatly or collects them for a combined mail.
+ * Either sends a mail immediately or collects them for a combined mail.
  *
  * @param $action
  *   The confirmation type, either subscribe or unsubscribe.
@@ -2889,7 +2821,7 @@ function simplenews_confirmation_send_combined() {
  *   The newsletter category object.
  */
 function simplenews_confirmation_send($action, $subscriber, $category) {
-  // Check if confirmation should be sent immediatly or grouped.
+  // Check if confirmation should be sent immediately or grouped.
   if (simplenews_confirmation_combine()) {
     simplenews_confirmation_add_combined($action, $subscriber, $category);
   }
