@@ -397,11 +397,40 @@ function simplenews_uninstall() {
  * Convert variables to config.
  */
 function simplenews_update_1000() {
+  $defaults = array(
+    'simplenews_format' => 'plain',
+    'simplenews_priority' => 0,
+    'simplenews_send' => 0,
+    'simplenews_use_cron' => true,
+    'simplenews_source_cache' => 'SimplenewsSourceCacheBuild',
+    'simplenews_throttle' => '20',
+    'simplenews_debug' => false,
+    'simplenews_sync_account' => true,
+    'simplenews_use_combined' => 'multiple',
+    'simplenews_spool_progress_expiration' => '3600',
+    'simplenews_source' => 'SimplenewsSourceNode',
+    'simplenews_private_key' => false,
+    'simplenews_category_field' => 'field_simplenews_term',
+    'simplenews_block_message_multiple' => 'Select the newsletters you want to subscribe to.',
+    'simplenews_block_message' => 'Stay informed on our latest news!',
+    'simplenews_block_interface' => 1,
+    'simplenews_block_link' => true,
+    'simplenews_block_previous' => false,
+    'simplenews_block_quantity' => 5,
+    'simplenews_block_rss' => true,
+    'simplenews_machine_name' => 'newsletter',
+    'simplenews_content_type_simplenews' => TRUE,
+  );
+
   $config = config('simplenews.settings');
   $query = "SELECT name FROM {variable} WHERE name LIKE 'simplenews_%%'";
   $names = db_query($query)->fetchAllAssoc('name', PDO::FETCH_ASSOC);
   foreach ($names as $name => $garbage) {
-    $value = update_variable_get($name);
+    $default_value = '';
+    if (isset($defaults[$name])) {
+      $default_value = $defaults[$name];
+    }
+    $value = update_variable_get($name, $default_value);
     $config->set($name, $value);
     update_variable_del($name);
   }
