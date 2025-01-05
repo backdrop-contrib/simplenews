@@ -81,10 +81,10 @@ function simplenews_permission() {
       'title' => t('Administer newsletters'),
     ),
     'administer simplenews subscriptions' => array(
-      'title' => t('Administer simplenews subscriptions'),
+      'title' => t('Administer SimpleNews subscriptions'),
     ),
     'administer simplenews settings' => array(
-      'title' => t('Administer simplenews settings'),
+      'title' => t('Administer SimpleNews settings'),
     ),
     'send newsletter' => array(
       'title' => t('Send newsletter'),
@@ -93,15 +93,6 @@ function simplenews_permission() {
       'title' => t('Subscribe to newsletters'),
     ),
   );
-}
-
-/**
- * Implements hook_init().
- *
- * @todo move this to a specific form theme function ?
- */
-function simplenews_init() {
-  backdrop_add_css(backdrop_get_path('module', 'simplenews') . '/simplenews.css', array('every_page' => TRUE));
 }
 
 /**
@@ -119,7 +110,7 @@ function simplenews_menu() {
   );
   $items['admin/config/services/simplenews'] = array(
     'title' => 'Newsletters',
-    'description' => 'Configure your sites newsletters.',
+    'description' => 'Configure the site\'s newsletters.',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_admin_categories'),
     'access arguments' => array('administer newsletters'),
@@ -351,7 +342,7 @@ function simplenews_node_view($node, $view_mode) {
 }
 
 /**
- * Get simplenews category term values from a node object.
+ * Get  SimpleNews category term values from a node object.
  *
  * @ingroup issue
  */
@@ -498,16 +489,16 @@ function simplenews_node_delete($node) {
  * Implements hook_node_load().
  */
 function simplenews_node_load($nodes, $types) {
-  // We only support Simplenews enabled content types.
+  // We only support SimpleNews enabled content types.
   if (!simplenews_check_node_types($types)) {
     return;
   }
 
   $newsletters = simplenews_newsletter_load_multiple(array_keys($nodes));
   foreach ($nodes as $nid => $node) {
-    // We can have multiple nodes where not all of them are simplenews enabled
+    // We can have multiple nodes where not all of them are SimpleNews enabled
     // content type. So we need to check for each individual node is it
-    // simplenews enabled.
+    //  SimpleNews enabled.
     if (!simplenews_check_node_types($node->type)) {
       continue;
     }
@@ -525,12 +516,12 @@ function simplenews_node_load($nodes, $types) {
 }
 
 /**
- * Check if content type(s) is enabled for use as Simplenews newsletter.
+ * Check if content type(s) is enabled for use as SimpleNews newsletter.
  *
  * @param $types
  *   Array of content types or single content type string.
  * @return boolean
- *   TRUE if at least one of $types is enabled for Simplenews.
+ *   TRUE if at least one of $types is enabled for SimpleNews.
  *
  * @ingroup issue
  */
@@ -549,10 +540,10 @@ function simplenews_check_node_types($types) {
 }
 
 /**
- * Get all node types supported by Simplenews.
+ * Get all node types supported by SimpleNews.
  *
  * @return
- *   Array of node-types which can be used a simplenews newsletter issue.
+ *   Array of node-types which can be used a SimpleNews newsletter issue.
  *
  * @ingroup issue
  */
@@ -686,10 +677,10 @@ function simplenews_get_category_field($bundle_name) {
  * Add checkbox to the content type form to use the content type as newsletter.
  */
 function simplenews_form_node_type_form_alter(&$form, $form_state) {
-  // Add option to use content type as simplenews newsletter.
+  // Add option to use content type as SimpleNews newsletter.
   $form['workflow']['simplenews_content_type'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use as simplenews newsletter'),
+    '#title' => t('Use as  SimpleNews newsletter'),
     '#default_value' => config_get('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type),
   );
   $form['#submit'][] = 'simplenews_form_node_type_form_submit';
@@ -723,7 +714,7 @@ function simplenews_form_taxonomy_form_term_alter(&$form, $form_state) {
   if (isset($form_state['confirm_delete']) && $form_state['confirm_delete']) {
     if ($form['#term']->vocabulary_machine_name == 'newsletter') {
       $category = simplenews_category_load($form['#term']->tid);
-      $form['description']['#markup'] = '<p>' . t('This taxonomy term is part of simplenews newsletter category %category_name. Deleting this term will delete the newsletter category and <strong>all subscriptions to category %category_name</strong>. This action cannot be undone.', array('%category_name' => _simplenews_newsletter_name($category))) . '</p>' . $form['description']['#markup'];
+      $form['description']['#markup'] = '<p>' . t('This taxonomy term is part of  SimpleNews newsletter category %category_name. Deleting this term will delete the newsletter category and <strong>all subscriptions to category %category_name</strong>. This action cannot be undone.', array('%category_name' => _simplenews_newsletter_name($category))) . '</p>' . $form['description']['#markup'];
     }
   }
 }
@@ -731,10 +722,10 @@ function simplenews_form_taxonomy_form_term_alter(&$form, $form_state) {
 /**
  * Implements hook_taxonomy_term_delete().
  *
- * Delete simplenews category if taxonomy term is delete.
+ * Delete SimpleNews category if taxonomy term is delete.
  */
 function simplenews_taxonomy_term_delete(TaxonomyTerm $term) {
-  // A simplenews newsletter category can not exist without the associated
+  // A SimpleNews newsletter category can not exist without the associated
   // taxonomy term. So we delete the category. simplenews_category_delete()
   // will also delete the subscriptions to the category.
   if ($term->vocabulary == 'newsletter') {
@@ -753,7 +744,7 @@ function simplenews_taxonomy_term_delete(TaxonomyTerm $term) {
  */
 function simplenews_form_alter(&$form, &$form_state, $form_id) {
   global $base_url;
-  // Add Simplenews settings to simplenews newsletter node form.
+  // Add SimpleNews settings to SimpleNews newsletter node form.
   if (!empty($form['#node_edit_form'])) {
     if (in_array($form['type']['#value'], simplenews_get_content_types())) {
       _simplenews_node_form($form, $form_state);
@@ -765,7 +756,7 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
       $tid = taxonomy_term_load_multiple(taxonomy_get_tree(arg(3))[0]->tid);
       $found = db_query("SELECT tid as min_id FROM {simplenews_category} WHERE tid = $tid->tid")->fetchField();
       if (!empty($found)) {
-        backdrop_set_message(t('If you want to delete the newsletter category, disable the Simplenews module first.'), 'error');
+        backdrop_set_message(t('If you want to delete the newsletter category, disable the SimpleNews module first.'), 'error');
         backdrop_goto('admin/structure/taxonomy');
       }
     }
@@ -869,7 +860,7 @@ function simplenews_cron() {
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * Add simplenews subscription fields to user register form.
+ * Add SimpleNews subscription fields to user register form.
  * @todo mode this function to another place in the module.
  */
 function simplenews_form_user_register_form_alter(&$form, &$form_state) {
@@ -1055,7 +1046,7 @@ function simplenews_subscription_edit_access($account) {
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * Add simplenews subscription management form to account category 'Newsletters'
+ * Add SimpleNews subscription management form to account category 'Newsletters'
  */
 function simplenews_form_user_profile_form_alter(&$form, &$form_state) {
   $subscription = simplenews_subscriber_load_by_mail($form['#user']->mail);
@@ -1515,7 +1506,7 @@ function simplenews_subscription_delete($conditions = array()) {
 }
 
 /**
- * Load a simplenews newsletter subscriber object.
+ * Load a SimpleNews newsletter subscriber object.
  *
  * @param $snid
  *   Simplenews subscriber ID.
@@ -1530,7 +1521,7 @@ function simplenews_subscriber_load($snid, $reset = FALSE) {
 }
 
 /**
- * Load a simplenews newsletter subscriber object.
+ * Load a SimpleNews newsletter subscriber object.
  *
  * @param $mail
  *   Subscriber e-mail address.
@@ -1545,7 +1536,7 @@ function simplenews_subscriber_load_by_mail($mail) {
 }
 
 /**
- * Load a simplenews newsletter subscriber object.
+ * Load a SimpleNews newsletter subscriber object.
  *
  * @param $uid
  *   Subscriber user id.
@@ -1560,7 +1551,7 @@ function simplenews_subscriber_load_by_uid($uid) {
 }
 
 /**
- * Load a simplenews subscriber using the hash.
+ * Load a SimpleNews subscriber using the hash.
  *
  * @param $hash
  *   A hash generated by simplenews_generate_hash().
@@ -1592,7 +1583,7 @@ function simplenews_subscriber_load_by_hash($hash) {
 }
 
 /**
- * Loads simplenews subscriber objects.
+ * Loads SimpleNews subscriber objects.
  *
  * @param $snids
  *   (Optional) Array of subscriber ID's.
@@ -1736,7 +1727,7 @@ function simplenews_recent_newsletters($tid, $count = 5) {
 /**
  * Implements hook_mail().
  *
- * Send simplenews mails using backdrop mail API.
+ * Send SimpleNews mails using backdrop mail API.
  *
  * @param $key
  *   Must be one of: node, test, subscribe, unsubscribe.
@@ -1789,7 +1780,7 @@ function simplenews_views_api() {
 }
 
 /**
- * Get a simplenews newsletter category object.
+ * Get a SimpleNews newsletter category object.
  *
  * @param $tid
  *   Simplenews category ID.
@@ -1808,7 +1799,7 @@ function simplenews_category_load($tid, $reset = FALSE) {
 }
 
 /**
- * Get list of simplenews categories with translated names.
+ * Get list of SimpleNews categories with translated names.
  *
  * @return
  *   array of category names. Translated if required.
@@ -1998,7 +1989,7 @@ function simplenews_newsletter_save($newsletter) {
 }
 
 /**
- * Delete simplenews newsletter from the database.
+ * Delete SimpleNews newsletter from the database.
  *
  * @param $newsletter
  *   Simplenews newsletter object or nid.
@@ -2080,7 +2071,7 @@ function simplenews_generate_hash($mail, $snid, $tid) {
 }
 
 /**
- * Returns simplenews format options.
+ * Returns SimpleNews format options.
  */
 function simplenews_format_options() {
   if (module_exists('mimemail') || module_exists('htmlmail')) {
@@ -2210,7 +2201,7 @@ function simplenews_subscription_confirmation_text($key) {
 }
 
 /**
- * Get defaults for the simplenews node form.
+ * Get defaults for the SimpleNews node form.
  */
 function _simplenews_get_node_form_defaults() {
   $defaults = array(
@@ -2431,7 +2422,7 @@ function theme_simplenews_field($variables) {
 }
 
 /**
- * Process variables to format the simplenews newsletter body.
+ * Process variables to format the SimpleNews newsletter body.
  *
  * @see simplenews-newsletter-body.tpl.php
  *
@@ -2458,7 +2449,7 @@ function template_preprocess_simplenews_newsletter_body(&$variables) {
 }
 
 /**
- * Process variables to format the simplenews newsletter footer.
+ * Process variables to format the SimpleNews newsletter footer.
  *
  * @see simplenews-newsletter-footer.tpl.php
  *
@@ -2581,14 +2572,14 @@ function simplenews_node_access($node, $op, $account) {
  * Implements hook_cronapi().
  *
  * As initiated by elysia_cron.
- * http://drupal.org/project/elysia_cron
+ * https://backdropcms.org/project/elysia_cron
  * */
 function simplenews_cronapi($op) {
 
   switch ($op) {
     case 'list':
       return array(
-        'simplenews_cron' => t('Process simplenews mail spool'),
+        'simplenews_cron' => t('Process SimpleNews mail spool'),
       );
     case 'rule':
       return '5 * * * *';

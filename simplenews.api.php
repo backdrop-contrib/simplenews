@@ -6,9 +6,9 @@
  */
 
 /**
- * @mainpage Simplenews API documentation.
+ * @mainpage SimpleNews API documentation.
  *
- * Simplenews builds on the following basic concepts.
+ * SimpleNews builds on the following basic concepts.
  *
  * @link subscriber Subscribers @endlink subscribe to @link newsletter
  * newsletters (categories) @endlink. That connection is called
@@ -18,9 +18,9 @@
  *
  * Sending is done by first adding a row for each subscriber to the @link spool
  * mail spool @endlink.
- * Then they are processed either immediatly or during cron runs. The actual
+ * Then they are processed either immediately or during cron runs. The actual
  * sending happens through a @link source source instance @endlink, which is
- * first instanciated based on the mail spool and then used to generated the
+ * first instantiated based on the mail spool and then used to generate the
  * actual mail content.
  *
  */

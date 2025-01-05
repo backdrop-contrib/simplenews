@@ -94,7 +94,7 @@ function simplenews_schema() {
   );
 
   $schema['simplenews_newsletter'] = array(
-    'description' => 'Simplenews newsletter data.',
+    'description' => 'SimpleNews newsletter data.',
     'fields' => array(
       'nid' => array(
         'description' => '{node} that is used as newsletter.',
@@ -287,7 +287,7 @@ function simplenews_schema() {
         'size' => 'tiny',
       ),
       'error' => array(
-        'description' => 'A boolean indicating whether an error occured while sending the email.',
+        'description' => 'A boolean indicating whether an error occurred while sending the email.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
@@ -377,7 +377,7 @@ function simplenews_install() {
 function simplenews_uninstall() {
   $config = config('simplenews.settings');
 
-  // Only delete Simplenews taxonomy field if was added by this module.
+  // Only delete SimpleNews taxonomy field if was added by this module.
   if ($config->get('simplenews_category_field') == 'field_simplenews_term') {
     field_delete_field('field_simplenews_term');
   }
@@ -389,7 +389,7 @@ function simplenews_uninstall() {
   db_delete('simplenews_subscription');
   db_delete('simplenews_subscriber');
 
-  // Remove Simplenews configuration file.
+  // Remove SimpleNews configuration file.
   $config->delete();
 }
 
@@ -417,7 +417,7 @@ function simplenews_update_1001() {
 }
 
 /**
- * Create simplenews node type.
+ * Create SimpleNews node type.
  */
 function _simplenews_install_nodetype() {
   // Create a newsletter type if needed.
@@ -425,7 +425,7 @@ function _simplenews_install_nodetype() {
   if (!$type) {
     $type = node_type_set_defaults(array(
       'type' => 'simplenews',
-      'name' => t('Simplenews newsletter'),
+      'name' => t('SimpleNews newsletter'),
       'base' => 'node_content',
       'description' => t('A newsletter issue to be sent to subscribed email addresses.'),
       'locked' => 0,
@@ -442,17 +442,17 @@ function _simplenews_install_nodetype() {
 }
 
 /**
- * Create simplenews vocabulary and initial term.
+ * Create SimpleNews vocabulary and initial term.
  */
 function _simplenews_init_simplenews_vocabulary() {
   $config = config('simplenews.settings');
-  // Create the simplenews vocabulary. If it exists, set simplenews_machine_name variable.
+  // Create the SimpleNews vocabulary. If it exists, set simplenews_machine_name variable.
   $vocabularies = taxonomy_vocabulary_load_multiple(array(), array('machine_name' => 'newsletter'));
   $vocabulary = reset($vocabularies);
   if (!$vocabulary) {
     $vocabulary = new TaxonomyVocabulary(array(
       'name' => t('Newsletter'),
-      'description' => t('Simplenews newsletter categories.'),
+      'description' => t('SimpleNews newsletter categories.'),
       'machine_name' => 'newsletter',
       'help' => '',
       'nodes' => array('simplenews' => 'simplenews'),
@@ -475,7 +475,7 @@ function _simplenews_init_simplenews_vocabulary() {
 }
 
 /**
- * Create initial simplenews categories.
+ * Create initial SimpleNews categories.
  */
 function _simplenews_init_simplenews_category() {
   $config = config('simplenews.settings');

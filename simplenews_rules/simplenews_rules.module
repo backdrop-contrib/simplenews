@@ -11,7 +11,7 @@ define('SIMPLENEWS_RULES_CONFIRMATION_NO', 2);
 
 
 /**
- * Returns the options for the confirmation paramter.
+ * Returns the options for the confirmation parameter.
  */
 function simplenews_rules_confirmation_list() {
   return array(

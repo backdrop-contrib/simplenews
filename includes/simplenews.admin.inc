@@ -1698,6 +1698,7 @@ function simplenews_subscription_filter_form() {
       '#value' => t('Reset'),
     );
   }
+  $form['#attached']['css'][] = backdrop_get_path('module', 'simplenews') . '/simplenews.css';
 
   return $form;
 }
