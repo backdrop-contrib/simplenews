@@ -331,47 +331,19 @@ function simplenews_admin_categories() {
       $form[$category->tid]['#category'] = $category;
       $form[$category->tid]['name'] = array('#markup' => check_plain(_simplenews_newsletter_name($category)));
       $form[$category->tid]['count'] = array('#markup' => simplenews_count_subscriptions($category->tid));
-      $form[$category->tid]['weight'] = array(
-        '#type' => 'weight',
-        '#delta' => 10,
-        '#default_value' => $category->weight,
-      );
       $form[$category->tid]['edit'] = array(
-        '#type' => 'link',
-        '#title' => t('edit newsletter category'),
-        '#href' => "admin/config/services/simplenews/categories/$category->tid/edit",
+        '#type' => 'dropbutton',
+        '#links' => array(
+          'edit' => array(
+            'title' => t('edit newsletter category'),
+            'href' => "admin/config/services/simplenews/categories/$category->tid/edit",
+          ),
+        ),
       );
     }
   }
 
-  // Only make this form include a submit button and weight if more than one
-  // category exists.
-  if (count($categories) > 1) {
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save'),
-    );
-  }
-  elseif (!empty($categories)) {
-    $form[$category->tid]['weight'] = array(
-      '#type' => 'value',
-      '#value' => 0,
-    );
-  }
   return $form;
-}
-
-/**
- * Form submit callback for the simplenews categories.
- */
-function simplenews_admin_categories_submit($form, &$form_state) {
-  foreach ($form_state['values'] as $tid => $category) {
-    if (is_numeric($tid) && $form[$tid]['#category']->weight != $category['weight']) {
-      $form[$tid]['#category']->weight = $category['weight'];
-      simplenews_category_save($form[$tid]['#category']);
-    }
-  }
-  backdrop_set_message(t('Your configuration has been saved.'));
 }
 
 /**
