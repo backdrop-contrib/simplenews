@@ -17,7 +17,7 @@ Requirements
 Installation
 ------------
 
-You can install the module through your Backdrop website's user interface per instructions on https://backdropcms.org/guide/modules or by simply running the `drush en simplenews` command on command line.
+You can install the module through your Backdrop website's user interface per instructions on https://backdropcms.org/guide/modules or by simply running the `bee en simplenews` command on command line.
 
 Configuration
 -------------
@@ -50,13 +50,13 @@ To use cron:
 Don't use cron:
   * Uncheck the 'Use cron to send newsletters' checkbox.
 
-All newsletters will be sent immediately when saving the node. If not all emails can be sent within the available php execution time, the remainder will be sent by cron. Therefore ALWAYS enable cron.
+All newsletters will be sent immediately when saving the node. If not all emails can be sent within the available php execution time, the remainder will be sent by cron. Therefore, ALWAYS enable cron.
 
 These settings are found on the Newsletter Settings page under 'Send mail' options at Administer > Configuration > Web Services > Newsletters > Settings > Send mail.
 
 3. (UN)SUBSCRIBE CONFIRMATION
 
-By default the unsubscribe link will direct the user to a confirmation page. Upon confirmation the user is directed to the home page, where a message will be displayed. On the Simplenews subscription admin page you can specify an alternative destination page: Configuration > Web Services > Newsletters > edit newsletter category > Subscription settings
+By default, the unsubscribe link will direct the user to a confirmation page. Upon confirmation the user is directed to the home page, where a message will be displayed. On the Simplenews subscription admin page you can specify an alternative destination page: Configuration > Web Services > Newsletters > edit newsletter category > Subscription settings
 
 To skip the confirmation page you can add parameters to the subscription URL.
   Example: [simplenews-subscribe-url]/ok
@@ -69,10 +69,9 @@ When an alternative destination page has been defined the extra parameters will 
 4. SINGLE OR DOUBLE OPT-IN AND OPT-OUT
 
 Every newsletter can be set to be double opt-in/out (default), single opt-in/out, or hidden.
-
-  Double: A confirmation email is sent to confirm the (un)subscribe action. No confirmation is sent when a user is (un)subscribed by the administrator or when the user subscribes when creating an account.
-  Single: No confirmation email is sent. (un)subscribe is immediately.
-  Hidden: The newsletter is not listed in newsletter lists. Use this for mandatory newsletters. Only administrators or modules can add a user to this mailing list.
+- Double: A confirmation email is sent to confirm the (un)subscribe action. No confirmation is sent when a user is (un)subscribed by the administrator or when the user subscribes when creating an account.
+- Single: No confirmation email is sent. (un)subscribe is immediately.
+- Hidden: The newsletter is not listed in newsletter lists. Use this for mandatory newsletters. Only administrators or modules can add a user to this mailing list.
 
 Note that single opt-in/out or hidden (forced) subscription is in some countries forbidden by law.
 
@@ -82,8 +81,7 @@ SECURITY NOTICE: a newsletter set to be single opt-in or opt-out is vulnerable t
 
 * A subscription page is available at: /newsletter/subscriptions
 
-* The Elysia Cron module (https://backdropcms.org/project/elysia_cron) can be used to start the simplenews cron hook more often than others, so that newsletter are sent faster without decreasing site performance due to long-running cron hooks.
-
+* The Elysia Cron module (https://backdropcms.org/project/elysia_cron) can be used to start the simplenews cron hook more often than others, so that newsletters are sent faster without decreasing site performance due to long-running cron hooks.
 
 Related modules
 ------------
@@ -97,12 +95,6 @@ Related modules
  * Maillog
    Captures outgoing mails, helps users debugging Simplenews.
    https://backdropcms.org/project/maillog
-
-
-Known-issues
-------------
-As discussed on https://github.com/backdrop-contrib/simplenews/issues/16#issuecomment-1364366461 there is no currently an upgrade path from Drupal 7.
-
 
 Credits
 -------
