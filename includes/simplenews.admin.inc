@@ -369,7 +369,6 @@ function theme_simplenews_admin_categories($variables) {
       $row[] = backdrop_render($category['edit']);
       $rows[] = array(
         'data' => $row,
-        'class' => array('draggable'),
       );
     }
   }
@@ -384,6 +383,7 @@ function theme_simplenews_admin_categories($variables) {
     'data' => t('Operations'),
     'colspan' => '3',
   );
+
   return theme('table', array('header' => $header, 'rows' => $rows, 'empty' => t('No newsletter categories. <a href="@link">Add category</a>.', array('@link' => url('admin/config/services/simplenews/add'))), 'attributes' => array('id' => 'newsletter-category'))) . backdrop_render_children($form);
 }
 

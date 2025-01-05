@@ -72,8 +72,6 @@ define('SIMPLENEWS_UNLIMITED', -1);
 
 /**
  * Implements hook_permission().
- *
- * @todo Change sort order where required: http://drupal.org/node/224333#sorting_permissions
  */
 function simplenews_permission() {
   return array(
@@ -2370,16 +2368,33 @@ function template_preprocess_simplenews_field(&$variables, $hook) {
 }
 
 /**
- * @todo
+ * Implements a custom theme function for SimpleNews fields.
  *
- * @see theme_field()
+ * This function renders a field for different view modes of SimpleNews emails.
+ * It handles plain text, alternative text, and HTML email formats by conditionally
+ * formatting the field label and its items.
  *
- * @ingroup theming
- */
-// @todo make simplenews_field.tpl.php
-/**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * @param array $variables
+ *   An associative array containing:
+ *   - view_mode: (string) The view mode of the field (e.g., 'email_plain', 'email_html').
+ *   - label_hidden: (bool) Whether the field label should be hidden.
+ *   - label: (string) The label of the field.
+ *   - items: (array) An array of field items to be rendered.
+ *
+ * @return string
+ *   The rendered output for the field in the specified view mode.
+ *
+ * Example usage:
+ * @code
+ *   $variables = [
+ *     'view_mode' => 'email_html',
+ *     'label_hidden' => FALSE,
+ *     'label' => 'Field Label',
+ *     'items' => [$item1, $item2],
+ *   ];
+ *   $output = theme_simplenews_field($variables);
+ *   print $output;
+ * @endcode
  */
 function theme_simplenews_field($variables) {
   $output = '';
