@@ -1319,7 +1319,7 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
 
     simplenews_confirmation_send('subscribe', $subscriber, simplenews_category_load($tid));
   }
-  elseif (!isset($subscriber->tids[$tid])) {
+  elseif (!isset($subscriber->tids[$tid]) && !empty($subscriber->snid)) {
     // Subscribe the user if not already subscribed.
     // @todo rewrite if subscription object is loaded in $subscriber->tids[$tid]
     $subscription = new stdClass();
@@ -1472,17 +1472,19 @@ function simplenews_subscription_update($conditions, $data) {
  * @ingroup subscription
  */
 function simplenews_subscription_save($subscription) {
-  db_merge('simplenews_subscription')
-    ->key(array('tid' => $subscription->tid))
-    ->key(array('snid' => $subscription->snid))
-    ->fields(array(
-    'snid' => $subscription->snid,
-    'tid' => $subscription->tid,
-    'status' => $subscription->status,
-    'timestamp' => $subscription->timestamp,
-    'source' => $subscription->source,
-  ))
-    ->execute();
+  if (!empty($subscription->snid)) {
+    db_merge('simplenews_subscription')
+      ->key(array('tid' => $subscription->tid))
+      ->key(array('snid' => $subscription->snid))
+      ->fields(array(
+        'snid' => $subscription->snid,
+        'tid' => $subscription->tid,
+        'status' => $subscription->status,
+        'timestamp' => $subscription->timestamp,
+        'source' => $subscription->source,
+      ))
+      ->execute();
+  }
 }
 
 /**
@@ -1649,26 +1651,26 @@ function simplenews_subscriber_save(&$subscriber) {
     db_update('simplenews_subscriber')
       ->condition('snid', $subscriber->snid)
       ->fields(array(
-      'snid' => $subscriber->snid,
-      'activated' => (int) $subscriber->activated,
-      'mail' => $subscriber->mail,
-      'uid' => $subscriber->uid,
-      'language' => $account->langcode,
-      'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
-    ))
+        'snid' => $subscriber->snid,
+        'activated' => (int) $subscriber->activated,
+        'mail' => $subscriber->mail,
+        'uid' => $subscriber->uid,
+        'language' => $account->langcode,
+        'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
+      ))
       ->execute();
     module_invoke_all('simplenews_subscriber_update', $subscriber);
   }
-  elseif (empty($subscriber->snid)) {
+  elseif (empty($subscriber->snid) && !empty($subscriber->mail)) {
     $query = db_insert('simplenews_subscriber')
       ->fields(array(
-      'activated' => $subscriber->activated,
-      'mail' => $subscriber->mail,
-      'uid' => $subscriber->uid,
-      'language' => $account->langcode,
-      'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
-      'created' => REQUEST_TIME,
-    ));
+        'activated' => $subscriber->activated,
+        'mail' => $subscriber->mail,
+        'uid' => $subscriber->uid,
+        'language' => $account->langcode,
+        'changes' => serialize(isset($subscriber->changes) ? $subscriber->changes : array()),
+        'created' => REQUEST_TIME,
+      ));
     $last_insert_id = $query->execute();
     if ($last_insert_id !== FALSE) {
       $subscriber->snid = $last_insert_id;
@@ -1867,18 +1869,18 @@ function simplenews_category_save($category) {
   db_merge('simplenews_category')
     ->key(array('tid' => $category->tid))
     ->fields(array(
-    'tid' => $category->tid,
-    'format' => $category->format,
-    'priority' => $category->priority,
-    'receipt' => $category->receipt,
-    'from_name' => $category->from_name,
-    'email_subject' => $category->email_subject,
-    'from_address' => $category->from_address,
-    'hyperlinks' => $category->hyperlinks,
-    'new_account' => $category->new_account,
-    'opt_inout' => $category->opt_inout,
-    'block' => $category->block,
-  ))
+      'tid' => $category->tid,
+      'format' => $category->format,
+      'priority' => $category->priority,
+      'receipt' => $category->receipt,
+      'from_name' => $category->from_name,
+      'email_subject' => $category->email_subject,
+      'from_address' => $category->from_address,
+      'hyperlinks' => $category->hyperlinks,
+      'new_account' => $category->new_account,
+      'opt_inout' => $category->opt_inout,
+      'block' => $category->block,
+    ))
     ->execute();
   module_invoke_all('simplenews_category_update', $category);
 }
@@ -1980,9 +1982,9 @@ function simplenews_newsletter_save($newsletter) {
   db_merge('simplenews_newsletter')
     ->key(array('nid' => $newsletter->nid))
     ->fields(array(
-    'tid' => $newsletter->tid,
-    'status' => $newsletter->status,
-  ))
+      'tid' => $newsletter->tid,
+      'status' => $newsletter->status,
+    ))
     ->execute();
 }
 
