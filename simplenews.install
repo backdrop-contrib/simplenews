@@ -377,11 +377,6 @@ function simplenews_install() {
 function simplenews_uninstall() {
   $config = config('simplenews.settings');
 
-  // Only delete SimpleNews taxonomy field if was added by this module.
-  if ($config->get('simplenews_category_field') == 'field_simplenews_term') {
-    field_delete_field('field_simplenews_term');
-  }
-
   // Delete DB tables.
   db_delete('simplenews_mail_spool');
   db_delete('simplenews_newsletter');
