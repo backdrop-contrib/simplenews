@@ -294,7 +294,7 @@ function simplenews_subscriptions_page_form($form, &$form_state, $code = NULL) {
     '#default_value' => $default_value,
   );
 
-  // If we have a mail address, which is either from a logged in user or a
+  // If we have a mail address, which is either from a logged-in user or a
   // subscriber identified through the hash code, display the mail address
   // instead of a textfield. Anonymous uses will still have to confirm any
   // changes.
@@ -348,6 +348,10 @@ function simplenews_subscriptions_page_form($form, &$form_state, $code = NULL) {
  */
 function simplenews_subscriptions_page_form_validate($form, &$form_state) {
   $valid_email = valid_email_address($form_state['values']['mail']);
+  $domain = explode('@', $form_state['values']['mail'])[1];
+  if (!checkdnsrr($domain, 'MX')) {
+    $valid_email = FALSE;
+  }
   if (!$valid_email) {
     form_set_error('mail', t('The e-mail address you supplied is not valid.'));
   }
