@@ -678,7 +678,7 @@ function simplenews_form_node_type_form_alter(&$form, $form_state) {
   // Add option to use content type as SimpleNews newsletter.
   $form['workflow']['simplenews_content_type'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use as  SimpleNews newsletter'),
+    '#title' => t('Use as SimpleNews newsletter'),
     '#default_value' => config_get('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type),
   );
   $form['#submit'][] = 'simplenews_form_node_type_form_submit';

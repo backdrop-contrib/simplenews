@@ -2,7 +2,7 @@
 Description
 -----------
 
-Simplenews publishes and sends newsletters to lists of subscribers. Both anonymous and authenticated users can opt-in to different mailing lists. HTML email can be sent by adding Mime mail module.
+SimpleNews publishes and sends newsletters to lists of subscribers. Both anonymous and authenticated users can opt-in to different mailing lists. HTML email can be sent by adding Mime mail module.
 
 
 Requirements
@@ -11,7 +11,7 @@ Requirements
  * For large mailing lists, cron is required.
  * HTML-format newsletters and/or newsletters with file attachments require the mime mail or HTML mail module.
  * When sending newsletters on regular cron (cron.php), it is important that the base url (settings.php, variable $base_url) is set correctly or links inside the newsletter will not work.
- * Additionally when using Drush to start cron, it is important to use the argument --uri=http://www.example.com
+ * Additionally, when using Drush to start cron, it is important to use the argument --uri=http://www.example.com
 
 
 Installation
@@ -23,13 +23,13 @@ Configuration
 -------------
 
 
-* To administer various Simplenews settings go to Configuration > Web services > Newsletter > Settings  (`/admin/config/services/simplenews/settings`).
+* To administer various SimpleNews settings go to Configuration > Web services > Newsletter > Settings  (`/admin/config/services/simplenews/settings`).
 
 * Add or edit newsletter categories on Configuration > Web services > Newsletter (`/admin/config/services/simplenews`).
 
-* By default Simplenews creates a new `Simplenews newsletter` content type, however you can enable any other content type to use as a newsletter on Structure > Content types > content type> Configure > Publishing settings > Use as simplenews newsletter.
+* By default, SimpleNews creates a new `SimpleNews newsletter` content type, however you can enable any other content type to use as a newsletter on Structure > Content types > content type > Configure > Publishing settings > Use as SimpleNews newsletter.
 
-* To enable Simplenews subscription blocks go to Structure > Layouts and choose a layout. Most probably you want to place subscription blocks on Home page or Default layouts. Choose a layout region where you want to place a Simplenews block, click on "Add block" and choose one of `Newsletter: your website newsletter` or `Newsletter: Multi Subscription`.
+* To enable SimpleNews subscription blocks go to Structure > Layouts and choose a layout. Most probably you want to place subscription blocks on Home page or Default layouts. Choose a layout region where you want to place a SimpleNews block, click on "Add block" and choose one of `Newsletter: your website newsletter` or `Newsletter: Multi Subscription`.
 
 
 Usage
@@ -37,7 +37,7 @@ Usage
 
 1. ENABLE SIMPLENEWS BLOCK
 
-With the Simplenews block users can subscribe to a newsletter. Enable a Simplenews block per Newsletter category on Configuration > Web services Newsletters page.
+With the SimpleNews block users can subscribe to a newsletter. Enable a SimpleNews block per Newsletter category on Configuration > Web services Newsletters page.
 
 2. SEND MAILING LISTS
 
@@ -81,35 +81,35 @@ SECURITY NOTICE: a newsletter set to be single opt-in or opt-out is vulnerable t
 
 * A subscription page is available at: /newsletter/subscriptions
 
-* The Elysia Cron module (https://backdropcms.org/project/elysia_cron) can be used to start the simplenews cron hook more often than others, so that newsletters are sent faster without decreasing site performance due to long-running cron hooks.
+* The Elysia Cron module (https://backdropcms.org/project/elysia_cron) can be used to start the SimpleNews cron hook more often than others, so that newsletters are sent faster without decreasing site performance due to long-running cron hooks.
 
 Related modules
 ------------
 
  * Elysia Cron
-   Allows fine grained control over cron tasks.
+   Allows fine-grained control over cron tasks.
    https://backdropcms.org/project/elysia_cron
  * Mailsystem
-   Extends Backdrop core mailystem wirh Administrative UI and Developers API.
+   Extends Backdrop core mailsystem with Administrative UI and Developers API.
    https://backdropcms.org/project/mailsystem
  * Maillog
-   Captures outgoing mails, helps users debugging Simplenews.
+   Captures outgoing mails, helps users debugging SimpleNews.
    https://backdropcms.org/project/maillog
 
 Credits
 -------
 
-This module is based on the Simplenews module for Drupal, originally written and maintained by a large number of contributors, including:
+This module is based on the SimpleNews module for Drupal, originally written and maintained by a large number of contributors, including:
 
-Berdir https://www.drupal.org/u/berdir
-miro_dietiker https://www.drupal.org/u/miro_dietiker
-Simon Georges https://www.drupal.org/u/simon-georges
-Sutharsan https://www.drupal.org/u/sutharsan
-AlexisWilke https://www.drupal.org/u/alexiswilke
+- [Berdir](https://www.drupal.org/u/berdir)
+- [miro_dietiker](https://www.drupal.org/u/miro_dietiker)
+- [Simon Georges](https://www.drupal.org/u/simon-georges)
+- [Sutharsan](https://www.drupal.org/u/sutharsan)
+- [AlexisWilke](https://www.drupal.org/u/alexiswilke)
 
 Current maintainers
 -------------------
 
-Simplenews is ported and supported by Backdrop Professionals at AltaGrade (https://www.altagrade.com):
+SimpleNews is ported and supported by Backdrop Professionals at AltaGrade (https://www.altagrade.com):
 
-* Alan Mels (https://github.com/alanmels)
+* [Alan Mels](https://github.com/alanmels)
