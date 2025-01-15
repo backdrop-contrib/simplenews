@@ -227,12 +227,14 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
 
   // Clear users with excluded domain e-mail addresses.
   $excluded_domains = config_get('simplenews.settings', 'excluded_domains');
-  $excluded_domains = array_map('trim', explode(',', $excluded_domains));
-  foreach ($spool_list as $id => $account) {
-    $domain = explode('@', $account->mail)[1];
-    foreach ($excluded_domains as $excluded_domain) {
-      if (str_contains($domain, $excluded_domain)) {
-        unset($spool_list[$id]);
+  if ($excluded_domains) {
+    $excluded_domains = array_map('trim', explode(',', $excluded_domains));
+    foreach ($spool_list as $id => $account) {
+      $domain = explode('@', $account->mail)[1];
+      foreach ($excluded_domains as $excluded_domain) {
+        if (str_contains($domain, $excluded_domain)) {
+          unset($spool_list[$id]);
+        }
       }
     }
   }
