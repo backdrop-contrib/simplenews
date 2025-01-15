@@ -375,7 +375,6 @@ function simplenews_install() {
  * Implements hook_uninstall().
  */
 function simplenews_uninstall() {
-  $config = config('simplenews.settings');
 
   // Delete DB tables.
   db_delete('simplenews_mail_spool');
@@ -385,6 +384,7 @@ function simplenews_uninstall() {
   db_delete('simplenews_subscriber');
 
   // Remove SimpleNews configuration file.
+  $config = config('simplenews.settings');
   $config->delete();
 }
 
