@@ -353,13 +353,13 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
     $valid_email = FALSE;
   }
   if (!$valid_email) {
-    form_set_error('mail', t('The e-mail address you supplied is not valid.'));
+    form_set_error('mail', t('The email address you entered appears to be invalid. Please double-check and try again.'));
   }
 
   $checked_newsletters = array_filter($form_state['values']['newsletters']);
   // Unless we're in update mode, at least one checkbox must be checked.
   if (!count($checked_newsletters) && $form_state['values']['op'] != t('Update')) {
-    form_set_error('newsletters', t('You must select at least one newsletter.'));
+    form_set_error('newsletters', t('Please select at least one newsletter to subscribe to.'));
   }
 
   // Prevent spam subscription attempts by anonymous users.
@@ -374,7 +374,7 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
             form_set_error('mail', t("You are already subscribed to <em>@newsletter</em> newsletter.", array('@newsletter' => $newsletter->name)));
           }
           // If subscription was sent, but not yet confirmed by user, then it's in newsletter_subscription array.
-          elseif ($account->newsletter_subscription[$tid] && $account->newsletter_subscription[$tid]->status != '0') {
+          elseif (isset($account->newsletter_subscription[$tid]) && $account->newsletter_subscription[$tid]->status != '0') {
             form_set_error('mail', t("A confirmation email for previous subscription request to <em>@newsletter</em> newsletter is already sent, please check your inbox.", array('@newsletter' => $newsletter->name)));
           }
         }
@@ -593,7 +593,7 @@ function simplenews_confirm_subscription() {
       elseif ($op == 'combined') {
         // Redirect and display message if no changes are available.
         if (empty($subscriber->changes)) {
-          backdrop_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
+          backdrop_set_message(t('Your subscription updates have been successfully saved.'));
           backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
         else {
@@ -608,7 +608,7 @@ function simplenews_confirm_subscription() {
           $path = $path . '/' . implode('/', $arguments);
           backdrop_goto($path);
         }
-        backdrop_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
+        backdrop_set_message(t('The email %mail has been successfully unsubscribed from the %newsletter newsletter.', array('%mail' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
         backdrop_goto(config_get('system.core', 'site_frontpage'));
       }
       elseif ($op == 'add') {
@@ -617,13 +617,14 @@ function simplenews_confirm_subscription() {
           $path = $path . '/' . implode('/', $arguments);
           backdrop_goto($path);
         }
-        backdrop_set_message(t('%user has been successfully added to the %newsletter mailing list.', array('%user' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))));
+
+        backdrop_set_message(t('The email %mail has been successfully subscribed to the %newsletter newsletter.', array('%mail' => $subscriber->mail, '%newsletter' => _simplenews_newsletter_name($category))), 'status');
         backdrop_goto(config_get('system.core', 'site_frontpage'));
       }
       elseif ($op == 'combined') {
         // Redirect and display message if no changes are available.
         if (empty($subscriber->changes)) {
-          backdrop_set_message(t('All changes to your subscriptions where already applied. No changes made.'));
+          backdrop_set_message(t('Your subscription updates have been successfully saved.'));
           backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
         else {
@@ -640,7 +641,7 @@ function simplenews_confirm_subscription() {
           $subscriber->changes = array();
           simplenews_subscriber_save($subscriber);
 
-          backdrop_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
+          backdrop_set_message(t('Subscription changes confirmed for %mail.', array('%mail' => $subscriber->mail)));
           backdrop_goto(config_get('system.core', 'site_frontpage'));
         }
       }
@@ -660,7 +661,7 @@ function simplenews_confirm_subscription() {
 function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
   $form = array();
   $form['question'] = array(
-    '#markup' => '<p>' . t('Are you sure you want to add %user to the %newsletter mailing list?', array('%user' => simplenews_mask_mail($mail), '%newsletter' => _simplenews_newsletter_name($newsletter))) . "<p>\n",
+    '#markup' => '<p>' . t('Are you sure you want to add %mail to the %newsletter mailing list?', array('%mail' => simplenews_mask_mail($mail), '%newsletter' => _simplenews_newsletter_name($newsletter))) . "<p>\n",
   );
   $form['mail'] = array(
     '#type' => 'value',
@@ -681,12 +682,11 @@ function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
 function simplenews_confirm_add_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
   simplenews_subscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
+  backdrop_set_message(t('Thank you! Your email, %mail, has been successfully subscribed to the %newsletter newsletter.', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
 
   if (!$path = $config->get('simplenews_confirm_subscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
-    backdrop_set_message(t('%user has been successfully added to the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
   }
-
   $form_state['redirect'] = $path;
 }
 
@@ -698,7 +698,7 @@ function simplenews_confirm_add_form_submit($form, &$form_state) {
 function simplenews_confirm_multi_form($form, &$form_state, $subscriber) {
   $form = array();
   $form['question'] = array(
-    '#markup' => '<p>' . t('Are you sure you want to confirm the following subscription changes for %user?', array('%user' => simplenews_mask_mail($subscriber->mail))) . "<p>\n",
+    '#markup' => '<p>' . t('Are you sure you want to confirm the following subscription changes for %mail?', array('%mail' => simplenews_mask_mail($subscriber->mail))) . "<p>\n",
   );
 
   $form['changes'] = array(
@@ -733,7 +733,7 @@ function simplenews_confirm_multi_form_submit($form, &$form_state) {
   $subscriber->changes = array();
   simplenews_subscriber_save($subscriber);
 
-  backdrop_set_message(t('Subscription changes confirmed for %user.', array('%user' => $subscriber->mail)));
+  backdrop_set_message(t('Subscription changes confirmed for %mail.', array('%mail' => $subscriber->mail)));
   $form_state['redirect'] = config_get('system.core', 'site_frontpage');
 }
 
@@ -766,7 +766,7 @@ function simplenews_mask_mail($mail) {
 function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter) {
   $form = array();
   $form['question'] = array(
-    '#markup' => '<p>' . t('Are you sure you want to remove %user from the %newsletter mailing list?', array('%user' => simplenews_mask_mail($mail), '%newsletter' => _simplenews_newsletter_name($newsletter))) . "<p>\n",
+    '#markup' => '<p>' . t('Are you sure you want to remove %mail from the %newsletter mailing list?', array('%mail' => simplenews_mask_mail($mail), '%newsletter' => _simplenews_newsletter_name($newsletter))) . "<p>\n",
   );
   $form['mail'] = array(
     '#type' => 'value',
@@ -788,9 +788,10 @@ function simplenews_confirm_removal_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
   simplenews_unsubscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
 
+  backdrop_set_message(t('You’ve successfully unsubscribed your email, %mail, from the %newsletter newsletter. We’re sorry to see you go!', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
+
   if (!$path = $config->get('simplenews_confirm_unsubscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
-    backdrop_set_message(t('%user was unsubscribed from the %newsletter mailing list.', array('%user' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
   }
 
   $form_state['redirect'] = $path;
