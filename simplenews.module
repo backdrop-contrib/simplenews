@@ -79,10 +79,10 @@ function simplenews_permission() {
       'title' => t('Administer newsletters'),
     ),
     'administer simplenews subscriptions' => array(
-      'title' => t('Administer SimpleNews subscriptions'),
+      'title' => t('Administer subscriptions'),
     ),
     'administer simplenews settings' => array(
-      'title' => t('Administer SimpleNews settings'),
+      'title' => t('Administer settings'),
     ),
     'send newsletter' => array(
       'title' => t('Send newsletter'),
@@ -1762,6 +1762,10 @@ function simplenews_mail($key, &$message, $params) {
       break;
     case 'unsubscribe':
       simplenews_build_unsubscribe_mail($message, $params);
+      break;
+    case 'subscription_notify':
+      $message['subject'] = isset($params['subject']) ? $params['subject'] : t('Newsletter subscription');
+      $message['body'][] = isset($params['body']) ? $params['body'] : t('A user has subscribed to a newsletter.');
       break;
   }
 

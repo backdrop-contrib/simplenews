@@ -1473,7 +1473,7 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Synchronize with account'),
     '#default_value' => $config->get('simplenews_sync_account'),
-    '#description' => t('When checked subscriptions will be synchronized with site accounts. When accounts are deleted, subscriptions with the same email address will be removed. When site accounts are blocked/unblocked, subscriptions will be deactivated/activated. When not checked subscriptions will be unchanged when associated accounts are deleted or blocked.'),
+    '#description' => t('When enabled, newsletter subscriptions will be synchronized with site user accounts. Subscriptions matching deleted accounts will be removed, and subscriptions will be deactivated or activated based on whether the associated account is blocked or unblocked. If disabled, subscriptions will remain unchanged regardless of account status.'),
   );
 
   $form['subscription_mail'] = array(
@@ -1481,7 +1481,6 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
     '#title' => t('Confirmation emails'),
     '#collapsible' => FALSE,
   );
-
   $form['subscription_mail']['simplenews_use_combined'] = array(
     '#type' => 'select',
     '#title' => t('Use combined confirmation mails'),
@@ -1629,6 +1628,32 @@ function simplenews_admin_settings_subscription($form, &$form_state) {
     '#description' => t('Backdrop path or URL of the destination page when the subscription removal is confirmed (e.g., node/123). Leave empty to go to the front page.'),
     '#default_value' => $config->get('simplenews_confirm_unsubscribe_page'),
   );
+
+  $form['notify_admins'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Notify administrators'),
+    '#collapsible' => FALSE,
+    '#description' => t('All users with the selected roles will receive notifications whenever someone subscribes to or unsubscribes from newsletters.'),
+  ];
+
+  $role_configs = config_get_names_with_prefix('user.role.');
+
+  foreach ($role_configs as $role_config_name) {
+    $role = config($role_config_name);
+    $role_name = $role->get('name');
+    $role_label = $role->get('label');
+    $permissions = $role->get('permissions');
+
+    if (in_array('administer newsletters', $permissions)) {
+      $config_key = 'notify_' . $role_name . '_role_members';
+
+      $form['notify_admins'][$config_key] = [
+        '#type' => 'checkbox',
+        '#title' => t($role_label),
+        '#default_value' => $config->get($config_key),
+      ];
+    }
+  }
 
   return system_settings_form($form);
 }

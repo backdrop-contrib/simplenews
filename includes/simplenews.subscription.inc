@@ -575,7 +575,7 @@ function simplenews_confirm_subscription() {
 
   if ($subscriber = simplenews_subscriber_load_by_hash($code)) {
     // Extract the category id.
-    list($snid, $tid) = explode('t', backdrop_substr($code, 10));
+    $tid = explode('t', backdrop_substr($code, 10))[1];
     if ($tid > 0) {
       $category = simplenews_category_load($tid);
     }
@@ -648,9 +648,8 @@ function simplenews_confirm_subscription() {
     }
   }
 
-  // If md5 didn't match, do a not found.
+  // If md5 didn't match, print not found.
   backdrop_not_found();
-  return;
 }
 
 /**
@@ -681,9 +680,25 @@ function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
  */
 function simplenews_confirm_add_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
-  simplenews_subscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
-  backdrop_set_message(t('Thank you! Your email, %mail, has been successfully subscribed to the %newsletter newsletter.', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
+  $email = $form_state['values']['mail'];
+  $newsletter_tid = $form_state['values']['newsletter']->tid;
 
+  // Subscribe user.
+  simplenews_subscribe_user($email, $newsletter_tid, FALSE, 'website');
+
+  // Show confirmation message.
+  backdrop_set_message(t(
+    'Thank you! Your email, %mail, has been successfully subscribed to the %newsletter newsletter.',
+    [
+      '%mail' => $email,
+      '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']),
+    ]
+  ));
+
+  // Send admin notifications.
+  simplenews_notify_roles_about_subscription($email, $newsletter_tid);
+
+  // Redirect user.
   if (!$path = $config->get('simplenews_confirm_subscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
   }
@@ -927,7 +942,6 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   }
 
   // update subscriber
-  $data = array();
   $subscriber->activated = $form_state['values']['activated'];
   if (!$subscriber->uid) {
     if (isset($form_state['values']['language'])) {
@@ -937,4 +951,45 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   simplenews_subscriber_save($subscriber);
 
   backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
+}
+
+function simplenews_notify_roles_about_subscription($email, $newsletter_tid) {
+  $config = config('simplenews.settings');
+  $role_configs = config_get_names_with_prefix('user.role.');
+  $notified_roles = [];
+
+  foreach ($role_configs as $role_config_name) {
+    $role = config($role_config_name);
+    $role_machine_name = $role->get('name'); // e.g., 'administrator'
+    $config_key = 'notify_' . backdrop_clean_css_identifier($role_machine_name) . '_role_members';
+
+    if ($config->get($config_key)) {
+      $notified_roles[] = $role_machine_name;
+    }
+  }
+
+  if (empty($notified_roles)) {
+    return;
+  }
+
+  // Query all active users with one of the selected roles.
+  $query = db_select('users', 'u');
+  $query->join('users_roles', 'ur', 'u.uid = ur.uid');
+  $query->fields('u', ['uid', 'mail']);
+  $query->condition('ur.role', $notified_roles, 'IN'); // Use 'role' instead of 'rid'
+  $query->condition('u.status', 1);
+  $query->distinct();
+
+  $result = $query->execute();
+
+  foreach ($result as $account) {
+    $params = [
+      'subject' => t('New newsletter subscription'),
+      'body' => t('User %email just subscribed to the %newsletter newsletter.', [
+        '%email' => $email,
+        '%newsletter' => _simplenews_newsletter_name(taxonomy_term_load($newsletter_tid)),
+      ]),
+    ];
+    backdrop_mail('simplenews', 'subscription_notify', $account->mail, language_default(), $params);
+  }
 }

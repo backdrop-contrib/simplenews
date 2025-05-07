@@ -21,5 +21,6 @@
     "simplenews_block_quantity": 5,
     "simplenews_block_rss": true,
     "simplenews_machine_name": "newsletter",
-    "simplenews_content_type_simplenews": true
+    "simplenews_content_type_simplenews": true,
+    "notify_admins": 1
 }
