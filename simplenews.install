@@ -407,9 +407,10 @@ function simplenews_update_1000() {
  * Allow using e-mail addresses longer than 64 characters.
  */
 function simplenews_update_1001() {
-  db_query("ALTER TABLE simplenews_category MODIFY from_address VARCHAR (255) NOT NULL;");
-  db_query("ALTER TABLE simplenews_subscriber MODIFY mail VARCHAR (255) NOT NULL;");
+  db_query("ALTER TABLE {simplenews_category} MODIFY from_address VARCHAR (255) NOT NULL;");
+  db_query("ALTER TABLE {simplenews_subscriber} MODIFY mail VARCHAR (255) NOT NULL;");
 }
+
 
 /**
  * Create SimpleNews node type.
