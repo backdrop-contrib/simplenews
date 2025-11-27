@@ -330,12 +330,18 @@ function simplenews_admin_categories() {
       $form[$category->tid]['#category'] = $category;
       $form[$category->tid]['name'] = array('#markup' => check_plain(_simplenews_newsletter_name($category)));
       $form[$category->tid]['count'] = array('#markup' => simplenews_count_subscriptions($category->tid));
+      $form[$category->tid]['optinout'] = array('#markup' => ucfirst($category->opt_inout));
+
       $form[$category->tid]['edit'] = array(
         '#type' => 'dropbutton',
         '#links' => array(
           'edit' => array(
-            'title' => t('edit newsletter category'),
+            'title' => t('Edit category'),
             'href' => "admin/config/services/simplenews/categories/$category->tid/edit",
+          ),
+          'delete' => array(
+            'title' => t('Delete'),
+            'href' => "admin/config/services/simplenews/categories/$category->tid/delete",
           ),
         ),
       );
@@ -362,6 +368,7 @@ function theme_simplenews_admin_categories($variables) {
       $row = array();
       $row[] = backdrop_render($category['name']);
       $row[] = backdrop_render($category['count']);
+      $row[] = backdrop_render($category['optinout']);
       if (isset($category['weight'])) {
         $category['weight']['#attributes']['class'] = array('simplenews-category-weight');
         $row[] = backdrop_render($category['weight']);
@@ -375,6 +382,7 @@ function theme_simplenews_admin_categories($variables) {
 
   $header = array(t('Newsletter category name'));
   $header[] = t('Subscribers');
+  $header[] = t('Opt In/Out status');
   if (isset($form['submit'])) {
     $header[] = t('Weight');
     backdrop_add_tabledrag('newsletter-category', 'order', 'self', 'simplenews-category-weight');
