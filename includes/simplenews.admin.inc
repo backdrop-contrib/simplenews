@@ -416,6 +416,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'new_account' => 'none',
     'opt_inout' => 'double',
     'block' => 1,
+    'page' => 0,
     'format' => $config->get('simplenews_format'),
     'priority' => $config->get('simplenews_priority'),
     'receipt' => $config->get('simplenews_receipt'),
@@ -492,6 +493,14 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#title' => t('Subscription block'),
     '#default_value' => $edit['block'],
     '#description' => t('A subscription block will be provided for this newsletter category. Anonymous and authenticated users can subscribe and unsubscribe using this block.'),
+  );
+
+  // Provide subscription page for this category.
+  $form['subscription']['page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Subscription page'),
+    '#default_value' => $edit['page'],
+    '#description' => t('A subscription page will be provided for this newsletter category at the URL <code>newsletter/subscriptions/[tid]</code>'),
   );
 
   $form['email'] = array(
