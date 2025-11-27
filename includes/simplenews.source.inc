@@ -339,7 +339,12 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
    * Return the Simplenews source implementation for the given mail spool row.
    */
   protected function getSourceImplementation($spool_data) {
-    return config_get('simplenews.settings', 'simplenews_source');
+    $source = config_get('simplenews.settings', 'simplenews_source');
+    if ($source == FALSE) {
+      // Safety fallback to using default class.
+      $source = 'SimplenewsSourceNode';
+    }
+    return $source;
   }
 }
 
