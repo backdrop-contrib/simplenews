@@ -246,14 +246,6 @@ function simplenews_menu() {
     'access arguments' => array('subscribe to newsletters'),
     'file' => 'includes/simplenews.subscription.inc',
   );
-  $items['newsletter/subscriptions/%'] = array(
-    'title' => 'Your newsletter subscriptions',
-    'type' => MENU_CALLBACK,
-    'page callback' => '_simplenews_subscriptions_signup_page',
-    'page arguments' => array(2),
-    'access arguments' => array('subscribe to newsletters'),
-    'file' => 'includes/simplenews.subscription.inc',
-  );
 
   $items['node/%node/simplenews'] = array(
     'title' => 'Newsletter',
@@ -1895,7 +1887,6 @@ function simplenews_category_save($category) {
       'new_account' => $category->new_account,
       'opt_inout' => $category->opt_inout,
       'block' => $category->block,
-      'page' => $category->page,
     ))
     ->execute();
   module_invoke_all('simplenews_category_update', $category);
@@ -2315,11 +2306,7 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = '';
 
   // Block content variables
-  $variables['message'] = t('Subscription for the @category newsletter:', array('@category' => $category->name));
-  $message = check_plain($config->get('simplenews_block_message_' . $tid));
-  if (isset($message) && !empty($message)) {
-    $variables['message'] = t($message);
-  }
+  $variables['message'] = check_plain($config->get('simplenews_block_message_' . $tid));
   if (user_access('subscribe to newsletters')) {
     module_load_include('inc', 'simplenews', 'simplenews.subscription');
     $variables['form'] = backdrop_get_form('simplenews_block_form_' . $tid);
@@ -2335,11 +2322,7 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = theme('feed_icon', array('url' => 'taxonomy/term/' . $tid . '/feed', 'title' => t('@newsletter feed', array('@newsletter' => _simplenews_newsletter_name($category)))));
 
   // Block content control variables
-  $variables['use_form'] = TRUE;
-  $block_settings = $config->get('simplenews_block_interface_' . $tid);
-  if (isset($block_settings)) {
-    $variables['use_form'] = $block_settings;
-  }
+  $variables['use_form'] = $config->get('simplenews_block_interface_' . $tid);
   $variables['use_issue_link'] = $config->get('simplenews_block_link_' . $tid);
   $variables['use_issue_list'] = $config->get('simplenews_block_previous_' . $tid);
   $variables['use_rss'] = $config->get('simplenews_block_rss_' . $tid);
