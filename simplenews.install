@@ -89,6 +89,13 @@ function simplenews_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'page' => array(
+        'description' => 'For this category a subscription page is available.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('tid'),
   );
@@ -341,6 +348,10 @@ function simplenews_schema() {
   return $schema;
 }
 
+/******************************************************************************
+ * Install / Uninstall hooks
+ ******************************************************************************/
+
 /**
  * Implements hook_install().
  */
@@ -388,6 +399,10 @@ function simplenews_uninstall() {
   $config->delete();
 }
 
+/******************************************************************************
+ * Update hooks
+ ******************************************************************************/
+
 /**
  * Convert variables to config.
  */
@@ -411,6 +426,25 @@ function simplenews_update_1001() {
   db_query("ALTER TABLE {simplenews_subscriber} MODIFY mail VARCHAR (255) NOT NULL;");
 }
 
+/**
+ * Add the 'page' column to the simplenews database table.
+ */
+function simplenews_update_1002() {
+  $schema = array(
+    'description' => 'For this category a subscription page is available.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field('simplenews_category', 'page', $schema);
+
+  return t('Added a subscription page option for each simplenews category.');
+}
+
+/******************************************************************************
+ * Helper functions
+ ******************************************************************************/
 
 /**
  * Create SimpleNews node type.

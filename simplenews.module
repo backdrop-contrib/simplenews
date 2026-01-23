@@ -246,6 +246,14 @@ function simplenews_menu() {
     'access arguments' => array('subscribe to newsletters'),
     'file' => 'includes/simplenews.subscription.inc',
   );
+  $items['newsletter/subscriptions/%'] = array(
+    'title' => 'Your newsletter subscriptions',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'simplenews_subscriptions_signup_page',
+    'page arguments' => array(2),
+    'access arguments' => array('subscribe to newsletters'),
+    'file' => 'includes/simplenews.subscription.inc',
+  );
 
   $items['node/%node/simplenews'] = array(
     'title' => 'Newsletter',
@@ -1887,6 +1895,7 @@ function simplenews_category_save($category) {
       'new_account' => $category->new_account,
       'opt_inout' => $category->opt_inout,
       'block' => $category->block,
+      'page' => $category->page,
     ))
     ->execute();
   module_invoke_all('simplenews_category_update', $category);
@@ -2290,7 +2299,7 @@ function simplenews_theme() {
  *
  * @see simplenews-block.tpl.php
  *
- * @ingroup theming
+ * @ingroup themeable
  */
 function template_preprocess_simplenews_block(&$variables) {
   $config = config('simplenews.settings');
@@ -2306,7 +2315,16 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = '';
 
   // Block content variables
-  $variables['message'] = check_plain($config->get('simplenews_block_message_' . $tid));
+  $message = check_plain($config->get('simplenews_block_message_' . $tid));
+  if (isset($message) && !empty($message)) {
+    $variables['message'] = $message;
+  }
+  else {
+    $message_string = 'Subscription for the @category newsletter:';
+    $substitutions = array('@category' => $category->name);
+    $variables['message'] = t($message_string, $substitutions);
+  }
+
   if (user_access('subscribe to newsletters')) {
     module_load_include('inc', 'simplenews', 'simplenews.subscription');
     $variables['form'] = backdrop_get_form('simplenews_block_form_' . $tid);
@@ -2317,19 +2335,29 @@ function template_preprocess_simplenews_block(&$variables) {
   $recent = simplenews_recent_newsletters($tid, $config->get('simplenews_block_quantity_' . $tid));
   $variables['issue_list'] = '';
   if ($recent) {
-    $variables['issue_list'] = theme('item_list', array('items' => $recent, 'title' => t('Previous issues'), 'type' => 'ul'));
+    $variables['issue_list'] = theme('item_list', array('items' => $recent, 'title' => t('Previous issues')));
   }
   $variables['rssfeed'] = theme('feed_icon', array('url' => 'taxonomy/term/' . $tid . '/feed', 'title' => t('@newsletter feed', array('@newsletter' => _simplenews_newsletter_name($category)))));
 
   // Block content control variables
-  $variables['use_form'] = $config->get('simplenews_block_interface_' . $tid);
+  $variables['use_form'] = TRUE;
+  $block_settings = $config->get('simplenews_block_interface_' . $tid);
+  if (isset($block_settings)) {
+    $variables['use_form'] = $block_settings;
+  }
   $variables['use_issue_link'] = $config->get('simplenews_block_link_' . $tid);
   $variables['use_issue_list'] = $config->get('simplenews_block_previous_' . $tid);
   $variables['use_rss'] = $config->get('simplenews_block_rss_' . $tid);
 
   // Additional variables
-  $variables['subscribed'] = empty($user->uid) ? FALSE : (simplenews_user_is_subscribed($user->mail, $tid) == TRUE);
-  $variables['user'] = !empty($user->uid);
+  $variables['user'] = FALSE;
+  $variables['subscribed'] =  FALSE;
+  if (!empty($user->uid)) {
+    $variables['user'] = TRUE;
+    if (simplenews_user_is_subscribed($user->mail, $tid)) {
+      $variables['subscribed'] = TRUE;
+    }
+  }
 }
 
 /**
@@ -2339,7 +2367,7 @@ function template_preprocess_simplenews_block(&$variables) {
  *
  * @see simplenews-multi-block.tpl.php
  *
- * @ingroup theming
+ * @ingroup themeable
  */
 function template_preprocess_simplenews_multi_block(&$variables) {
   // Block content variables
@@ -2450,7 +2478,7 @@ function theme_simplenews_field($variables) {
  *
  * @see simplenews-newsletter-body.tpl.php
  *
- * @ingroup theming
+ * @ingroup themeable
  */
 function template_preprocess_simplenews_newsletter_body(&$variables) {
   // We don't want to include links and comments in the email.
@@ -2477,7 +2505,7 @@ function template_preprocess_simplenews_newsletter_body(&$variables) {
  *
  * @see simplenews-newsletter-footer.tpl.php
  *
- * @ingroup theming
+ * @ingroup themeable
  */
 function template_preprocess_simplenews_newsletter_footer(&$variables) {
   // We don't want to include links and comments in the email.

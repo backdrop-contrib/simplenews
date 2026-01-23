@@ -247,6 +247,23 @@ function simplenews_block_form_submit($form, &$form_state) {
 }
 
 /**
+ * Page callback: Generates a subscription signup page.
+ */
+function simplenews_subscriptions_signup_page($newsletter_id = NULL) {
+  if (!is_null($newsletter_id)) {
+    $newsletters = simplenews_categories_load_multiple(array(), array('block' => '1', 'show_all' => FALSE));
+
+    // Only display a block if $newsletter_id is a valid newsletter term id.
+    if (in_array($newsletter_id, array_keys($newsletters))) {
+      $theme_hook_suggestions = array('simplenews_block__' . $newsletter_id, 'simplenews_block');
+      $variables = array('tid' => $newsletter_id, 'use_form' => TRUE);
+      return theme($theme_hook_suggestions, $variables);
+    }
+  }
+  return;
+}
+
+/**
  * FAPI PAGE subscription form.
  *
  * @see simplenews_subscriptions_page_form_validate()
