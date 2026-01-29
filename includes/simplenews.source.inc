@@ -21,36 +21,36 @@ interface SimplenewsSourceInterface {
    * @return
    *   Mail headers as an array.
    */
-  function getHeaders(array $headers);
+  public function getHeaders(array $headers);
 
   /**
    * Returns the mail subject.
    */
-  function getSubject();
+  public function getSubject();
 
   /**
    * Returns the mail body.
    *
    * The body should either be plaintext or html, depending on the format.
    */
-  function getBody();
+  public function getBody();
 
   /**
    * Returns the plaintext body.
    */
-  function getPlainBody();
+  public function getPlainBody();
 
   /**
    * Returns the mail footer.
    *
    * The footer should either be plaintext or html, depending on the format.
    */
-  function getFooter();
+  public function getFooter();
 
   /**
    * Returns the plain footer.
    */
-  function getPlainFooter();
+  public function getPlainFooter();
 
   /**
    * Returns the mail format.
@@ -58,7 +58,7 @@ interface SimplenewsSourceInterface {
    * @return
    *   The mail format as string, either 'plain' or 'html'.
    */
-  function getFormat();
+  public function getFormat();
 
   /**
    * Returns the recipent of this newsletter mail.
@@ -66,12 +66,12 @@ interface SimplenewsSourceInterface {
    * @return
    *   The recipient mail address(es) of this newsletter as a string.
    */
-  function getRecipient();
+  public function getRecipient();
 
   /**
    * The language that should be used for this newsletter mail.
    */
-  function getLanguage();
+  public function getLanguage();
 
   /**
    * Returns an array of attachments for this newsletter mail.
@@ -79,7 +79,7 @@ interface SimplenewsSourceInterface {
    * @return
    *   An array of managed file objects with properties uri, filemime and so on.
    */
-  function getAttachments();
+  public function getAttachments();
 
   /**
    * Returns the token context to be used with token replacements.
@@ -87,7 +87,7 @@ interface SimplenewsSourceInterface {
    * @return
    *   An array of objects as required by token_replace().
    */
-  function getTokenContext();
+  public function getTokenContext();
 
   /**
    * Returns the mail key to be used for backdrop_mail().
@@ -95,17 +95,18 @@ interface SimplenewsSourceInterface {
    * @return
    *   The mail key, either test or node.
    */
-  function getKey();
+  public function getKey();
 
   /**
    * Returns the formatted from mail address.
    */
-  function getFromFormatted();
+  public function getFromFormatted();
 
   /**
    * Returns the plain mail address.
    */
-  function getFromAddress();
+  public function getFromAddress();
+
 }
 
 /**
@@ -122,17 +123,18 @@ interface SimplenewsSourceNodeInterface extends SimplenewsSourceInterface {
   /**
    * Create a source based on a node and subscriber.
    */
-  function __construct($node, $subscriber);
+  public function __construct($node, $subscriber);
 
   /**
    * Returns the actually used node of this source.
    */
-  function getNode();
+  public function getNode();
 
   /**
    * Returns the subscriber object.
    */
-  function getSubscriber();
+  public function getSubscriber();
+
 }
 
 /**
@@ -148,7 +150,7 @@ interface SimplenewsSourceCacheInterface {
    * Create a new instance, allows to initialize based on the used
    * source.
    */
-  function __construct(SimplenewsSourceNodeInterface $source);
+  public function __construct(SimplenewsSourceNodeInterface $source);
 
   /**
    * Return a cached element, if existing.
@@ -167,7 +169,7 @@ interface SimplenewsSourceCacheInterface {
    * @param $key
    *   Identifies the requested element, e.g., body, footer or attachments.
    */
-  function get($group, $key);
+  public function get($group, $key);
 
   /**
    * Write an element to the cache.
@@ -188,7 +190,8 @@ interface SimplenewsSourceCacheInterface {
    * @param $data
    *   The data to be saved in the cache.
    */
-  function set($group, $key, $data);
+  public function set($group, $key, $data);
+
 }
 
 /**
@@ -198,7 +201,7 @@ interface SimplenewsSourceCacheInterface {
  * in array of mail spool rows. Additionally, it needs to return the processed
  * mail rows after a source was sent.
  *
- * @todo: Move spool functions into this interface.
+ * @todo Move spool functions into this interface.
  *
  * @ingroup spool
  */
@@ -210,7 +213,7 @@ interface SimplenewsSpoolInterface {
    * @param $spool_list
    *   An array of rows from the {simplenews_mail_spool} table.
    */
-  function __construct($pool_list);
+  public function __construct($pool_list);
 
   /**
    * Returns a Simplenews source to be sent.
@@ -218,7 +221,7 @@ interface SimplenewsSpoolInterface {
    * A single source may represent any number of mail spool rows, e.g., by
    * addressing them as BCC.
    */
-  function nextSource();
+  public function nextSource();
 
   /**
    * Returns the processed mail spool rows, keyed by the msid.
@@ -235,7 +238,8 @@ interface SimplenewsSpoolInterface {
    *       when the corresponding node failed to load.
    *     - status: A simplenews spool status to indicate the status.
    */
-  function getProcessed();
+  public function getProcessed();
+
 }
 
 /**
@@ -272,7 +276,7 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
     // next row.
     $key = key($this->spool_list);
     $value = current($this->spool_list);
-    $return = is_null($key) ? false : [
+    $return = is_null($key) ? FALSE : [
       1        => $value,
       'value'    => $value,
       0        => $key,
@@ -329,7 +333,7 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
   /**
    * Implements SimplenewsSpoolInterface::getProcessed();
    */
-  function getProcessed() {
+  public function getProcessed() {
     $processed = $this->processed;
     $this->processed = array();
     return $processed;
@@ -339,13 +343,14 @@ class SimplenewsSpool implements SimplenewsSpoolInterface {
    * Return the Simplenews source implementation for the given mail spool row.
    */
   protected function getSourceImplementation($spool_data) {
-    $source = config_get('simplenews.settings', 'simplenews_source');
+    $source = config_get('simplenews.settings', 'source');
     if ($source == FALSE) {
       // Safety fallback to using default class.
       $source = 'SimplenewsSourceNode';
     }
     return $source;
   }
+
 }
 
 /**
@@ -393,7 +398,8 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   protected $cache;
 
   /**
-   * Per https://github.com/backdrop-contrib/simplenews/issues/24
+   * Per https://github.com/backdrop-contrib/simplenews/issues/24.
+   *
    * @var
    */
   protected $uid;
@@ -457,7 +463,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    * Initialize the cache implementation.
    */
   protected function initCache() {
-    $class = config_get('simplenews.settings', 'simplenews_source_cache');
+    $class = config_get('simplenews.settings', 'source_cache');
     $this->cache = new $class($this);
   }
 
@@ -499,18 +505,22 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
         $headers['Priority'] = 'High';
         $headers['X-Priority'] = '1';
         break;
+
       case SIMPLENEWS_PRIORITY_HIGH:
         $headers['Priority'] = 'urgent';
         $headers['X-Priority'] = '2';
         break;
+
       case SIMPLENEWS_PRIORITY_NORMAL:
         $headers['Priority'] = 'normal';
         $headers['X-Priority'] = '3';
         break;
+
       case SIMPLENEWS_PRIORITY_LOW:
         $headers['Priority'] = 'non-urgent';
         $headers['X-Priority'] = '4';
         break;
+
       case SIMPLENEWS_PRIORITY_LOWEST:
         $headers['Priority'] = 'non-urgent';
         $headers['X-Priority'] = '5';
@@ -521,7 +531,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
     $headers['From'] = $this->getFromFormatted();
     $headers['List-Unsubscribe'] = '<' . token_replace('[simplenews-subscriber:unsubscribe-url]', $this->getTokenContext(), array('sanitize' => FALSE)) . '>';
 
-    // Add general headers
+    // Add general headers.
     $headers['Precedence'] = 'bulk';
     return $headers;
   }
@@ -529,7 +539,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   /**
    * Implements SimplenewsSourceInterface::getTokenContext().
    */
-  function getTokenContext() {
+  public function getTokenContext() {
     return array(
       'category' => $this->getCategory(),
       'simplenews_subscriber' => $this->getSubscriber(),
@@ -540,21 +550,21 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   /**
    * Set the mail key.
    */
-  function setKey($key) {
+  public function setKey($key) {
     $this->key = $key;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getKey().
    */
-  function getKey() {
+  public function getKey() {
     return $this->key;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getFromFormatted().
    */
-  function getFromFormatted() {
+  public function getFromFormatted() {
     // Windows based PHP systems don't accept formatted email addresses.
     if (backdrop_substr(PHP_OS, 0, 3) == 'WIN') {
       return $this->getFromAddress();
@@ -566,47 +576,47 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   /**
    * Implements SimplenewsSourceInterface::getFromAddress().
    */
-  function getFromAddress() {
+  public function getFromAddress() {
     return $this->getCategory()->from_address;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getRecipient().
    */
-  function getRecipient() {
+  public function getRecipient() {
     return $this->getSubscriber()->mail;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getFormat().
    */
-  function getFormat() {
+  public function getFormat() {
     return $this->getCategory()->format;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getLanguage().
    */
-  function getLanguage() {
+  public function getLanguage() {
     return $this->getSubscriber()->language;
   }
 
   /**
    * Implements SimplenewsSourceSpoolInterface::getNode().
    */
-  function getNode() {
+  public function getNode() {
     return $this->node;
   }
 
   /**
    * Implements SimplenewsSourceInterface::getSubject().
    */
-  function getSubject() {
+  public function getSubject() {
     // Build email subject and perform some sanitizing.
     $langcode = $this->getLanguage();
     $language_list = language_list();
     // Use the requested language if enabled.
-    $language = isset($language_list[$langcode]) ? $language_list[$langcode] : NULL;
+    $language = $language_list[$langcode] ?? NULL;
     $subject = token_replace($this->getCategory()->email_subject, $this->getTokenContext(), array('sanitize' => FALSE, 'language' => $language));
 
     // Line breaks are removed from the email subject to prevent injection of
@@ -620,7 +630,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    */
   protected function setContext() {
 
-    // Switch to the user
+    // Switch to the user.
     if ($this->uid = $this->getSubscriber()->uid) {
       simplenews_impersonate_user($this->uid);
     }
@@ -663,6 +673,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    * Build the node object.
    *
    * The resulting build array is cached as it is used in multiple places.
+   *
    * @param $format
    *   (Optional) Override the default format. Defaults to getFormat().
    */
@@ -675,7 +686,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
     }
 
     // Build message body
-    // Supported view modes: 'email_plain', 'email_html', 'email_textalt'
+    // Supported view modes: 'email_plain', 'email_html', 'email_textalt'.
     $build = node_view($this->node, 'email_' . $format);
     unset($build['#theme']);
 
@@ -767,7 +778,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
       return $cache;
     }
 
-    // Build and buffer message footer
+    // Build and buffer message footer.
     $footer = theme('simplenews_newsletter_footer', array(
       'build' => $this->build($format),
       'category' => $this->getCategory(),
@@ -818,7 +829,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
   /**
    * Implements SimplenewsSourceInterface::getAttachments().
    */
-  function getAttachments() {
+  public function getAttachments() {
     if ($cache = $this->cache->get('data', 'attachments')) {
       return $cache;
     }
@@ -827,7 +838,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
     $build = $this->build();
     $fids = array();
     foreach (field_info_instances('node', $this->node->type) as $field_name => $field_instance) {
-      // @todo: Find a better way to support more field types.
+      // @todo Find a better way to support more field types.
       // Only add fields of type file which are enabled for the current view
       // mode as attachments.
       $field = field_info_field($field_name);
@@ -847,6 +858,7 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
     $this->cache->set('data', 'attachments', $attachments);
     return $attachments;
   }
+
 }
 
 /**
@@ -925,7 +937,8 @@ abstract class SimplenewsSourceCacheStatic implements SimplenewsSourceCacheInter
    * @return
    *   TRUE if it should be cached, FALSE otherwise.
    */
-  abstract function isCacheable($group, $key);
+  abstract public function isCacheable($group, $key);
+
 }
 
 /**
@@ -954,7 +967,7 @@ class SimplenewsSourceCacheBuild extends SimplenewsSourceCacheStatic {
   /**
    * Implements SimplenewsSourceCacheStatic::set().
    */
-  function isCacheable($group, $key) {
+  public function isCacheable($group, $key) {
 
     // Only cache for anon users.
     if (user_is_logged_in()) {
@@ -975,12 +988,14 @@ class SimplenewsSourceCacheBuild extends SimplenewsSourceCacheStatic {
 class SimplenewsSourceTest implements SimplenewsSourceInterface {
 
   protected $format;
+
   /**
    * {@inheritdoc}
    */
   public function __construct($format) {
     $this->format = $format;
   }
+
   /**
    * {@inheritdoc}
    */
@@ -993,42 +1008,49 @@ class SimplenewsSourceTest implements SimplenewsSourceInterface {
       ),
     );
   }
+
   /**
    * {@inheritdoc}
    */
   public function getBody() {
     return $this->getFormat() == 'plain' ? $this->getPlainBody() : 'the body';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getFooter() {
     return $this->getFormat() == 'plain' ? $this->getPlainFooter() : 'the footer';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getPlainFooter() {
     return 'the plain footer';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getFormat() {
     return $this->format;
   }
+
   /**
    * {@inheritdoc}
    */
   public function getFromAddress() {
     return 'test@example.org';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getFromFormatted() {
     return 'Test <test@example.org>';
   }
+
   /**
    * {@inheritdoc}
    */
@@ -1036,40 +1058,47 @@ class SimplenewsSourceTest implements SimplenewsSourceInterface {
     $headers['X-Simplenews-Test'] = 'OK';
     return $headers;
   }
+
   /**
    * {@inheritdoc}
    */
   public function getKey() {
     return 'node';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getLanguage() {
     return 'en';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getPlainBody() {
     return 'the plain body';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getRecipient() {
     return 'recipient@example.org';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getSubject() {
     return 'the subject';
   }
+
   /**
    * {@inheritdoc}
    */
   public function getTokenContext() {
     return array();
   }
+
 }

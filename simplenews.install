@@ -348,22 +348,22 @@ function simplenews_install() {
 
   // Set default e-mail address for "From" and "To" fields.
   if (!empty($email = config_get('system.core', 'site_mail'))) {
-    config_set('simplenews.settings', 'simplenews_from_address', $email);
-    config_set('simplenews.settings', 'simplenews_test_address', $email);
+    config_set('simplenews.settings', 'from_address', $email);
+    config_set('simplenews.settings', 'test_address', $email);
   }
   elseif (!empty($email = ini_get('sendmail_from'))) {
     // This is not always reliable as https://www.php.net/manual/en/mail.configuration.php
     // shows the default for `sendmail_from` is NULL.
-    config_set('simplenews.settings', 'simplenews_from_address', $email);
-    config_set('simplenews.settings', 'simplenews_test_address', $email);
+    config_set('simplenews.settings', 'from_address', $email);
+    config_set('simplenews.settings', 'test_address', $email);
   }
   else {
     // As the last resort, there is no chance $user->init returns empty.
     $user = user_load('1');
-    config_set('simplenews.settings', 'simplenews_from_address', $user->init);
-    config_set('simplenews.settings', 'simplenews_test_address', $user->init);
+    config_set('simplenews.settings', 'from_address', $user->init);
+    config_set('simplenews.settings', 'test_address', $user->init);
   }
-  config_set('simplenews.settings', 'simplenews_from_name', config_get('system.core', 'site_name'));
+  config_set('simplenews.settings', 'from_name', config_get('system.core', 'site_name'));
 
   _simplenews_init_simplenews_vocabulary();
   _simplenews_init_simplenews_category();
@@ -411,6 +411,34 @@ function simplenews_update_1001() {
   db_query("ALTER TABLE {simplenews_subscriber} MODIFY mail VARCHAR (255) NOT NULL;");
 }
 
+/**
+ * Remove the redundant 'simplenews_' prefix from configuration keys.
+ */
+function simplenews_update_1002() {
+  $config = config('simplenews.settings');
+  $changed = FALSE;
+
+  foreach ($config->get() as $key => $value) {
+    if (strpos($key, 'simplenews_') === 0) {
+      $new_key = substr($key, strlen('simplenews_'));
+      if ($new_key === '') {
+        continue;
+      }
+      if ($config->get($new_key) === NULL) {
+        $config->set($new_key, $value);
+      }
+      $config->clear($key);
+      $changed = TRUE;
+    }
+  }
+
+  if ($changed) {
+    $config->save();
+  }
+
+  return t('Configuration keys updated to remove the simplenews_ prefix.');
+}
+
 
 /**
  * Create SimpleNews node type.
@@ -434,7 +462,7 @@ function _simplenews_install_nodetype() {
   if (!field_info_instance('node', 'field_simplenews_term', $type->type)) {
     simplenews_add_term_field($type);
   }
-  config_set('simplenews.settings', 'simplenews_content_type_' . $type->type, TRUE);
+  config_set('simplenews.settings', 'content_type_' . $type->type, TRUE);
 }
 
 /**
@@ -442,7 +470,7 @@ function _simplenews_install_nodetype() {
  */
 function _simplenews_init_simplenews_vocabulary() {
   $config = config('simplenews.settings');
-  // Create the SimpleNews vocabulary. If it exists, set simplenews_machine_name variable.
+  // Create the SimpleNews vocabulary. If it exists, set machine_name variable.
   $vocabularies = taxonomy_vocabulary_load_multiple(array(), array('machine_name' => 'newsletter'));
   $vocabulary = reset($vocabularies);
   if (!$vocabulary) {
@@ -455,7 +483,7 @@ function _simplenews_init_simplenews_vocabulary() {
     ));
   }
   taxonomy_vocabulary_save($vocabulary);
-  config_set('simplenews.settings', 'simplenews_machine_name', $vocabulary->machine_name);
+  config_set('simplenews.settings', 'machine_name', $vocabulary->machine_name);
 
   // Create a newsletter taxonomy term if none exists.
   $tree = taxonomy_get_tree($vocabulary->machine_name);
@@ -475,7 +503,7 @@ function _simplenews_init_simplenews_vocabulary() {
  */
 function _simplenews_init_simplenews_category() {
   $config = config('simplenews.settings');
-  if ($tree = taxonomy_get_tree($config->get('simplenews_machine_name'))) {
+  if ($tree = taxonomy_get_tree($config->get('machine_name'))) {
     $categories = simplenews_categories_load_multiple();
     $first = TRUE;
     foreach ($tree as $term) {

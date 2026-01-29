@@ -1,7 +1,7 @@
 <?php
+
 /**
  * @file
- *
  * Drush commands for administer SimpleNews.
  */
 
@@ -61,7 +61,7 @@ function drush_simplenews_spool_send($limit = FALSE) {
   module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
 
   if ($limit === FALSE) {
-    $limit = config_get('simplenews.settings', 'simplenews_throttle');
+    $limit = config_get('simplenews.settings', 'throttle');
   }
   elseif ($limit == 0) {
     $limit = SIMPLENEWS_UNLIMITED;

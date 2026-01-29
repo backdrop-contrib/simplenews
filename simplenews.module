@@ -550,7 +550,7 @@ function simplenews_get_content_types() {
 
   if (!$simplenews_types) {
     foreach (node_type_get_types() as $name => $type) {
-      if (config_get('simplenews.settings', 'simplenews_content_type_' . $name)) {
+      if (config_get('simplenews.settings', 'content_type_' . $name)) {
         $simplenews_types[] = $name;
       }
     }
@@ -567,7 +567,7 @@ function simplenews_get_content_types() {
  * @ingroup issue
  */
 function simplenews_add_term_field($type) {
-  $field_name = config_get('simplenews.settings', 'simplenews_category_field');
+  $field_name = config_get('simplenews.settings', 'category_field');
   $field = field_info_field($field_name);
   $instance = field_info_instance('node', $field_name, $type->type);
 
@@ -639,7 +639,7 @@ function simplenews_add_term_field($type) {
  * @ingroup issue
  */
 function simplenews_remove_term_field($type) {
-  $field_name = config_get('simplenews.settings', 'simplenews_category_field');
+  $field_name = config_get('simplenews.settings', 'category_field');
   $instance = field_info_instance('node', $field_name, $type->type);
   if ($instance) {
     field_delete_instance($instance);
@@ -659,7 +659,7 @@ function simplenews_remove_term_field($type) {
  */
 function simplenews_get_category_field($bundle_name) {
   $fields_info = field_info_fields();
-  $field_name = config_get('simplenews.settings', 'simplenews_category_field');
+  $field_name = config_get('simplenews.settings', 'category_field');
   $instances = field_info_instances('node', $bundle_name);
   if (isset($instances[$field_name])) {
     return $fields_info[$field_name];
@@ -679,7 +679,7 @@ function simplenews_form_node_type_form_alter(&$form, $form_state) {
   $form['workflow']['simplenews_content_type'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use as SimpleNews newsletter'),
-    '#default_value' => config_get('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type),
+    '#default_value' => config_get('simplenews.settings', 'content_type_' . $form['#node_type']->type),
   );
   $form['#submit'][] = 'simplenews_form_node_type_form_submit';
 }
@@ -694,7 +694,7 @@ function simplenews_form_node_type_form_submit(&$form, $form_state) {
   $info['type'] = $form_state['values']['type'];
   $info = (object) $info;
   if (!empty($form_state['input']['simplenews_content_type'])) {
-    config_set('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type, $form_state['input']['simplenews_content_type']);
+    config_set('simplenews.settings', 'content_type_' . $form['#node_type']->type, $form_state['input']['simplenews_content_type']);
     simplenews_add_term_field($info);
   }
   else {
@@ -782,9 +782,9 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
   }
   // Hide unnecessary option item if there are more than one newsletter category term.
   $config = config('simplenews.settings');
-  $simplenews_category_field = $config->get('simplenews_category_field');
+  $simplenews_category_field = $config->get('category_field');
   if ($form_id == 'field_ui_field_edit_form' && $form['instance']['field_name']['#value'] == $simplenews_category_field) {
-    if ($config->get('simplenews_content_type_' . $form['#instance']['bundle'])) {
+    if ($config->get('content_type_' . $form['#instance']['bundle'])) {
       if (isset($form['instance']['default_value_widget'][$simplenews_category_field][LANGUAGE_NONE]['#options'])) {
         if (count($form['instance']['default_value_widget'][$simplenews_category_field][LANGUAGE_NONE]['#options']) > '1') {
           unset($form['instance']['default_value_widget'][$simplenews_category_field][LANGUAGE_NONE]['#options']['_none']);
@@ -852,7 +852,7 @@ function simplenews_entity_info_alter(&$info) {
  */
 function simplenews_cron() {
   module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
-  simplenews_mail_spool(config_get('simplenews.settings', 'simplenews_throttle'));
+  simplenews_mail_spool(config_get('simplenews.settings', 'throttle'));
   simplenews_clear_spool();
   // Update sent status for newsletter admin panel.
   simplenews_send_status_update();
@@ -1073,7 +1073,7 @@ function simplenews_block_info() {
     $blocks[$category->tid] = array(
       'info' => t('Newsletter: @title', array('@title' => _simplenews_newsletter_name($category))),
       // @todo Use block's own settings?
-      'cache' => config_get('simplenews.settings', 'simplenews_block_interface_' . $category->tid) ? BACKDROP_NO_CACHE : BACKDROP_CACHE_PER_ROLE,
+      'cache' => config_get('simplenews.settings', 'block_interface_' . $category->tid) ? BACKDROP_NO_CACHE : BACKDROP_CACHE_PER_ROLE,
     );
   }
   return $blocks;
@@ -1092,7 +1092,7 @@ function simplenews_block_configure($delta = '') {
       '#size' => 60,
       '#maxlength' => 255,
       // @todo: clean localization / i18n needed
-      '#default_value' => $config->get('simplenews_block_message_multiple'),
+      '#default_value' => $config->get('block_message_multiple'),
     );
   }
   else {
@@ -1101,7 +1101,7 @@ function simplenews_block_configure($delta = '') {
       '#title' => t('Block message'),
       '#size' => 60,
       '#maxlength' => 255,
-      '#default_value' => !empty($config->get('simplenews_block_message_' . $delta)) ? $config->get('simplenews_block_message_' . $delta) : $config->get('simplenews_block_message'),
+      '#default_value' => !empty($config->get('block_message_' . $delta)) ? $config->get('block_message_' . $delta) : $config->get('block_message'),
     );
 
     $form['simplenews_block_' . $delta]['simplenews_block_interface_' . $delta] = array(
@@ -1112,32 +1112,32 @@ function simplenews_block_configure($delta = '') {
         '0' => t('Link to form'),
       ),
       '#description' => t("Note: this requires permission 'subscribe to newsletters'."),
-      '#default_value' => NULL !== $config->get('simplenews_block_interface_' . $delta) ? $config->get('simplenews_block_interface_' . $delta) : $config->get('simplenews_block_interface'),
+      '#default_value' => NULL !== $config->get('block_interface_' . $delta) ? $config->get('block_interface_' . $delta) : $config->get('block_interface'),
     );
 
     $form['simplenews_block_' . $delta]['simplenews_block_link_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display link to previous issues'),
       '#return_value' => 1,
-      '#default_value' => NULL !== $config->get('simplenews_block_link_' . $delta) ? $config->get('simplenews_block_link_' . $delta) : $config->get('simplenews_block_link'),
+      '#default_value' => NULL !== $config->get('block_link_' . $delta) ? $config->get('block_link_' . $delta) : $config->get('block_link'),
     );
     $form['simplenews_block_' . $delta]['simplenews_block_previous_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display previous issues'),
       '#return_value' => 1,
-      '#default_value' => NULL !== $config->get('simplenews_block_previous_' . $delta) ? $config->get('simplenews_block_previous_' . $delta) : $config->get('simplenews_block_previous'),
+      '#default_value' => NULL !== $config->get('block_previous_' . $delta) ? $config->get('block_previous_' . $delta) : $config->get('block_previous'),
     );
     $form['simplenews_block_' . $delta]['simplenews_block_quantity_' . $delta] = array(
       '#type' => 'select',
       '#title' => t('Number of issues to display'),
       '#options' => backdrop_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-      '#default_value' => NULL !== $config->get('simplenews_block_quantity_' . $delta) ? $config->get('simplenews_block_quantity_' . $delta) : $config->get('simplenews_block_quantity'),
+      '#default_value' => NULL !== $config->get('block_quantity_' . $delta) ? $config->get('block_quantity_' . $delta) : $config->get('block_quantity'),
     );
     $form['simplenews_block_' . $delta]['simplenews_block_rss_' . $delta] = array(
       '#type' => 'checkbox',
       '#title' => t('Display RSS-feed icon'),
       '#return_value' => 1,
-      '#default_value' => NULL !== $config->get('simplenews_block_rss_' . $delta) ? $config->get('simplenews_block_rss_' . $delta) : $config->get('simplenews_block_rss'),
+      '#default_value' => NULL !== $config->get('block_rss_' . $delta) ? $config->get('block_rss_' . $delta) : $config->get('block_rss'),
     );
   }
   return $form;
@@ -1148,16 +1148,16 @@ function simplenews_block_configure($delta = '') {
  */
 function simplenews_block_save($delta = '', $edit = array()) {
   if ($delta == 0) {
-    config_set('simplenews.settings', 'simplenews_block_message_multiple', $edit['simplenews_block_multiple']['simplenews_block_message_multiple']);
+    config_set('simplenews.settings', 'block_message_multiple', $edit['simplenews_block_multiple']['simplenews_block_message_multiple']);
   }
   else {
     $block = 'simplenews_block_' . $delta;
-    $m = 'simplenews_block_message_' . $delta;
-    $i = 'simplenews_block_interface_' . $delta;
-    $l = 'simplenews_block_link_' . $delta;
-    $p = 'simplenews_block_previous_' . $delta;
-    $q = 'simplenews_block_quantity_' . $delta;
-    $r = 'simplenews_block_rss_' . $delta;
+    $m = 'block_message_' . $delta;
+    $i = 'block_interface_' . $delta;
+    $l = 'block_link_' . $delta;
+    $p = 'block_previous_' . $delta;
+    $q = 'block_quantity_' . $delta;
+    $r = 'block_rss_' . $delta;
     config_set('simplenews.settings', $m, $edit[$block][$m]);
     config_set('simplenews.settings', $i, $edit[$block][$i]);
     config_set('simplenews.settings', $l, $edit[$block][$l]);
@@ -1771,7 +1771,7 @@ function simplenews_mail($key, &$message, $params) {
 
   // Debug message to check for outgoing emails messages.
   // Debug message of node and test emails is set in simplenews_mail_mail().
-  if (config_get('simplenews.settings', 'simplenews_debug') && $key != 'node' && $key != 'test') {
+  if (config_get('simplenews.settings', 'debug') && $key != 'node' && $key != 'test') {
     watchdog('simplenews', 'Outgoing email. Message type: %type<br />Subject: %subject<br />Recipient: %to', array('%type' => $key, '%to' => $message['to'], '%subject' => $message['subject']), WATCHDOG_DEBUG);
   }
 }
@@ -2019,11 +2019,11 @@ function simplenews_newsletter_delete($newsletter) {
  * Create a 32 character identifier.
  */
 function simplenews_private_key() {
-  $key = config_get('simplenews.settings', 'simplenews_private_key');
+  $key = config_get('simplenews.settings', 'private_key');
   if (!$key) {
 //  This will create a 32 character identifier (a 128-bit hex number) that is extremely difficult to predict
     $key = md5(uniqid(rand()));
-    config_set('simplenews.settings', 'simplenews_private_key', $key);
+    config_set('simplenews.settings', 'private_key', $key);
   }
   return $key;
 }
@@ -2161,7 +2161,7 @@ function simplenews_variable_info($options) {
  *
  */
 function simplenews_subscription_confirmation_text($key) {
-  $text = config_get('simplenews.settings', 'simplenews_confirm_' . $key);
+  $text = config_get('simplenews.settings', 'confirm_' . $key);
   // If administrator did not change the text, the variable is empty.
   // We get the default here.
   if (!$text) {
@@ -2306,7 +2306,7 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = '';
 
   // Block content variables
-  $variables['message'] = check_plain($config->get('simplenews_block_message_' . $tid));
+  $variables['message'] = check_plain($config->get('block_message_' . $tid));
   if (user_access('subscribe to newsletters')) {
     module_load_include('inc', 'simplenews', 'simplenews.subscription');
     $variables['form'] = backdrop_get_form('simplenews_block_form_' . $tid);
@@ -2314,7 +2314,7 @@ function template_preprocess_simplenews_block(&$variables) {
   }
   // @todo replace path
   $variables['newsletter_link'] = l(t('Previous issues'), 'taxonomy/term/' . $tid);
-  $recent = simplenews_recent_newsletters($tid, $config->get('simplenews_block_quantity_' . $tid));
+  $recent = simplenews_recent_newsletters($tid, $config->get('block_quantity_' . $tid));
   $variables['issue_list'] = '';
   if ($recent) {
     $variables['issue_list'] = theme('item_list', array('items' => $recent, 'title' => t('Previous issues'), 'type' => 'ul'));
@@ -2322,10 +2322,10 @@ function template_preprocess_simplenews_block(&$variables) {
   $variables['rssfeed'] = theme('feed_icon', array('url' => 'taxonomy/term/' . $tid . '/feed', 'title' => t('@newsletter feed', array('@newsletter' => _simplenews_newsletter_name($category)))));
 
   // Block content control variables
-  $variables['use_form'] = $config->get('simplenews_block_interface_' . $tid);
-  $variables['use_issue_link'] = $config->get('simplenews_block_link_' . $tid);
-  $variables['use_issue_list'] = $config->get('simplenews_block_previous_' . $tid);
-  $variables['use_rss'] = $config->get('simplenews_block_rss_' . $tid);
+  $variables['use_form'] = $config->get('block_interface_' . $tid);
+  $variables['use_issue_link'] = $config->get('block_link_' . $tid);
+  $variables['use_issue_list'] = $config->get('block_previous_' . $tid);
+  $variables['use_rss'] = $config->get('block_rss_' . $tid);
 
   // Additional variables
   $variables['subscribed'] = empty($user->uid) ? FALSE : (simplenews_user_is_subscribed($user->mail, $tid) == TRUE);
@@ -2343,7 +2343,7 @@ function template_preprocess_simplenews_block(&$variables) {
  */
 function template_preprocess_simplenews_multi_block(&$variables) {
   // Block content variables
-  $variables['message'] = check_plain(config_get('simplenews.settings', 'simplenews_block_message_multiple'));
+  $variables['message'] = check_plain(config_get('simplenews.settings', 'block_message_multiple'));
   $variables['form'] = backdrop_get_form('simplenews_subscriptions_multi_block_form');
 }
 
@@ -2801,7 +2801,7 @@ function simplenews_confirmation_send_combined() {
     $params['context']['simplenews_subscriber'] = $subscriber;
     // Send multiple if there is more than one change for this subscriber
     // single otherwise.
-    $use_combined = config_get('simplenews.settings', 'simplenews_use_combined');
+    $use_combined = config_get('simplenews.settings', 'use_combined');
     if ((count($changes) > 1 && $use_combined != 'never') || $use_combined == 'always') {
       $params['context']['changes'] = $changes;
       $key = 'subscribe_combined';

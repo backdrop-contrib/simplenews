@@ -1941,7 +1941,7 @@ class SimpleNewsUpgradePathTestCase extends UpgradePathTestCase {
     $this->assertText('Backdrop 6 newsletter');
 
     // Check category field
-    $this->assertEqual(variable_get('simplenews_category_field'), 'taxonomy_vocabulary_1');
+    $this->assertEqual(config_get('simplenews.settings', 'category_field'), 'taxonomy_vocabulary_1');
     $this->assertTrue(field_info_instance('node', 'taxonomy_vocabulary_1', 'simplenews'));
 
     // Create an issue.

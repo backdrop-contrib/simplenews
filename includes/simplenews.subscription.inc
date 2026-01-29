@@ -2,12 +2,12 @@
 
 /**
  * @file
- * (Un)subscription and (un)subscription confirmation
+ * (Un)subscription and (un)subscription confirmation.
  *
  * FAPI subscription form cases:
  * - ACCOUNT
  *   self/admin action: authenticated user
- *   via hook_user form: category=newsletter
+ *   via hook_user form: category=newsletter.
  *
  * - BLOCK
  *   self action: anonymous / authenticated user
@@ -80,9 +80,9 @@ function simplenews_subscriptions_account_form(&$form, &$form_state, $subscriber
 
   $form['subscriptions']['#title'] = t('Newsletter subscriptions');
 
-  // if we don't override #validate, see user_profile_form_validate
+  // If we don't override #validate, see user_profile_form_validate
   // adding an own #submit leads to the situation where Backdrop omits execution
-  // of user_profile_form_submit completely
+  // of user_profile_form_submit completely.
   $form['#submit'][] = 'simplenews_subscriptions_account_form_submit';
 }
 
@@ -99,7 +99,7 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
   $subscriptions_changed = count(array_diff($existing_tids, $new_tids)) || count(array_diff($new_tids, $existing_tids));
 
   // We first subscribe, then unsubscribe. This prevents deletion of subscriptions
-  // when unsubscribed from the
+  // when unsubscribed from the.
   arsort($form_state['values']['newsletters'], SORT_NUMERIC);
   foreach ($form_state['values']['newsletters'] as $tid => $checked) {
     if ($checked) {
@@ -123,7 +123,8 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
 /**
  * FAPI BLOCK subscription form.
  *
- * @param $tid term id of selected newsletter.
+ * @param $tid
+ *   term id of selected newsletter.
  *
  * @see simplenews_block_form_validate()
  * @see simplenews_block_form_submit()
@@ -190,7 +191,7 @@ function simplenews_block_form($form, &$form_state, $tid) {
  */
 
 /**
- * form_validate
+ * Form_validate.
  */
 function simplenews_block_form_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['mail'])) {
@@ -223,7 +224,7 @@ function simplenews_block_form_validate($form, &$form_state) {
  */
 
 /**
- * form_submit
+ * Form_submit.
  */
 function simplenews_block_form_submit($form, &$form_state) {
   $tid = $form['#tid'];
@@ -241,6 +242,7 @@ function simplenews_block_form_submit($form, &$form_state) {
         backdrop_set_message(t('You have been subscribed.'));
       }
       break;
+
     case 'unsubscribe':
       simplenews_unsubscribe_user($form_state['values']['mail'], $tid, $confirm, 'website');
       if ($confirm) {
@@ -316,7 +318,7 @@ function simplenews_subscriptions_page_form($form, &$form_state, $code = NULL) {
       '#type' => 'submit',
       '#value' => t('Update'),
       '#weight' => 20,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
   }
   else {
@@ -334,13 +336,13 @@ function simplenews_subscriptions_page_form($form, &$form_state, $code = NULL) {
       '#type' => 'submit',
       '#value' => t('Subscribe'),
       '#weight' => 20,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
     $form['unsubscribe'] = array(
       '#type' => 'submit',
       '#value' => t('Unsubscribe'),
       '#weight' => 30,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
   }
 
@@ -373,7 +375,7 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
   if ($form_state['values']['op'] == 'Subscribe') {
     $account = simplenews_subscriber_load_by_mail($form_state['values']['mail']);
     if ($account && $account->uid == 0) {
-      foreach($form_state['values']['newsletters'] as $tid => $value) {
+      foreach ($form_state['values']['newsletters'] as $tid => $value) {
         if ($value == TRUE) {
           $newsletter = taxonomy_term_load($tid);
           // If subscription is already confirmed by user, then it's in tids array.
@@ -403,7 +405,7 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
   switch ($form_state['values']['op']) {
     case t('Update'):
       // We first subscribe, then unsubscribe. This prevents deletion of subscriptions
-      // when unsubscribed from the
+      // when unsubscribed from the.
       arsort($form_state['values']['newsletters'], SORT_NUMERIC);
       foreach ($form_state['values']['newsletters'] as $tid => $checked) {
         $confirm = simplenews_require_double_opt_in($tid, $account);
@@ -421,6 +423,7 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
         backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
       }
       break;
+
     case t('Subscribe'):
       foreach ($form_state['values']['newsletters'] as $tid => $checked) {
         if ($checked) {
@@ -435,6 +438,7 @@ function simplenews_subscriptions_page_form_submit($form, &$form_state) {
         backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
       }
       break;
+
     case t('Unsubscribe'):
       foreach ($form_state['values']['newsletters'] as $tid => $checked) {
         if ($checked) {
@@ -492,7 +496,7 @@ function simplenews_subscriptions_multi_block_form($form, &$form_state) {
   );
 
   // If current user is logged in, just display email.
-  // Anonymous users see an email box and will receive confirmations
+  // Anonymous users see an email box and will receive confirmations.
   if (user_is_logged_in()) {
     // @todo why not simply Manage your subscriptions?
     $form['mail'] = array(
@@ -503,7 +507,7 @@ function simplenews_subscriptions_multi_block_form($form, &$form_state) {
       '#type' => 'submit',
       '#value' => t('Update'),
       '#weight' => 20,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
   }
   else {
@@ -519,13 +523,13 @@ function simplenews_subscriptions_multi_block_form($form, &$form_state) {
       '#type' => 'submit',
       '#value' => t('Subscribe'),
       '#weight' => 20,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
     $form['unsubscribe'] = array(
       '#type' => 'submit',
       '#value' => t('Unsubscribe'),
       '#weight' => 30,
-      // @todo: add clean submit handler
+      // @todo add clean submit handler
     );
   }
 
@@ -536,7 +540,7 @@ function simplenews_subscriptions_multi_block_form($form, &$form_state) {
 }
 
 /**
- * Menu callback: confirm the user's (un)subscription request
+ * Menu callback: confirm the user's (un)subscription request.
  *
  * This function is called by clicking the confirm link in the confirmation
  * email or the unsubscribe link in the footer of the newsletter. It handles
@@ -553,7 +557,7 @@ function simplenews_subscriptions_multi_block_form($form, &$form_state) {
  */
 
 /**
- * Menu callback: confirm the user's (un)subscription request
+ * Menu callback: confirm the user's (un)subscription request.
  *
  * This function is called by clicking the confirm link in the confirmation
  * email or the unsubscribe link in the footer of the newsletter. It handles
@@ -611,7 +615,7 @@ function simplenews_confirm_subscription() {
     else {
       if ($op == 'remove') {
         simplenews_unsubscribe_user($subscriber->mail, $tid, FALSE, 'website');
-        if ($path = $config->get('simplenews_confirm_unsubscribe_page')) {
+        if ($path = $config->get('confirm_unsubscribe_page')) {
           $path = $path . '/' . implode('/', $arguments);
           backdrop_goto($path);
         }
@@ -620,7 +624,7 @@ function simplenews_confirm_subscription() {
       }
       elseif ($op == 'add') {
         simplenews_subscribe_user($subscriber->mail, $tid, FALSE, 'website');
-        if ($path = $config->get('simplenews_confirm_subscribe_page')) {
+        if ($path = $config->get('confirm_subscribe_page')) {
           $path = $path . '/' . implode('/', $arguments);
           backdrop_goto($path);
         }
@@ -683,7 +687,7 @@ function simplenews_confirm_add_form($form, &$form_state, $mail, $newsletter) {
 }
 
 /**
- * form_submit
+ * Form_submit.
  */
 function simplenews_confirm_add_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -706,7 +710,7 @@ function simplenews_confirm_add_form_submit($form, &$form_state) {
   simplenews_notify_roles_about_subscription($email, $newsletter_tid);
 
   // Redirect user.
-  if (!$path = $config->get('simplenews_confirm_subscribe_page')) {
+  if (!$path = $config->get('confirm_subscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
   }
   $form_state['redirect'] = $path;
@@ -738,7 +742,7 @@ function simplenews_confirm_multi_form($form, &$form_state, $subscriber) {
 }
 
 /**
- * form_submit
+ * Form_submit.
  */
 function simplenews_confirm_multi_form_submit($form, &$form_state) {
   $subscriber = $form_state['values']['subscriber'];
@@ -804,7 +808,7 @@ function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter
 }
 
 /**
- * form_submit
+ * Form_submit.
  */
 function simplenews_confirm_removal_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -812,7 +816,7 @@ function simplenews_confirm_removal_form_submit($form, &$form_state) {
 
   backdrop_set_message(t('You’ve successfully unsubscribed your email, %mail, from the %newsletter newsletter. We’re sorry to see you go!', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
 
-  if (!$path = $config->get('simplenews_confirm_unsubscribe_page')) {
+  if (!$path = $config->get('confirm_unsubscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
   }
 
@@ -882,7 +886,7 @@ function simplenews_subscriptions_admin_form($form, &$form_state, $snid) {
       $form['language']['language'] = array(
         '#type' => 'item',
         '#title' => t('User language'),
-        '#markup' => isset($language_options[$subscriber->language]) ? $language_options[$subscriber->language] : $language_default,
+        '#markup' => $language_options[$subscriber->language] ?? $language_default,
       );
     }
     else {
@@ -937,7 +941,7 @@ function simplenews_subscriptions_admin_form_validate($form, &$form_state) {
 function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   $subscriber = simplenews_subscriber_load_by_mail($form_state['values']['mail']);
 
-  // update subscriptions
+  // Update subscriptions.
   arsort($form_state['values']['newsletters'], SORT_NUMERIC);
   foreach ($form_state['values']['newsletters'] as $tid => $checked) {
     if ($checked) {
@@ -948,7 +952,7 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
     }
   }
 
-  // update subscriber
+  // Update subscriber.
   $subscriber->activated = $form_state['values']['activated'];
   if (!$subscriber->uid) {
     if (isset($form_state['values']['language'])) {
@@ -960,6 +964,9 @@ function simplenews_subscriptions_admin_form_submit($form, &$form_state) {
   backdrop_set_message(t('The newsletter subscriptions for %mail have been updated.', array('%mail' => $form_state['values']['mail'])));
 }
 
+/**
+ *
+ */
 function simplenews_notify_roles_about_subscription($email, $newsletter_tid) {
   $config = config('simplenews.settings');
   $role_configs = config_get_names_with_prefix('user.role.');
@@ -967,7 +974,8 @@ function simplenews_notify_roles_about_subscription($email, $newsletter_tid) {
 
   foreach ($role_configs as $role_config_name) {
     $role = config($role_config_name);
-    $role_machine_name = $role->get('name'); // e.g., 'administrator'
+    // e.g., 'administrator'.
+    $role_machine_name = $role->get('name');
     $config_key = 'notify_' . backdrop_clean_css_identifier($role_machine_name) . '_role_members';
 
     if ($config->get($config_key)) {
@@ -983,7 +991,8 @@ function simplenews_notify_roles_about_subscription($email, $newsletter_tid) {
   $query = db_select('users', 'u');
   $query->join('users_roles', 'ur', 'u.uid = ur.uid');
   $query->fields('u', ['uid', 'mail']);
-  $query->condition('ur.role', $notified_roles, 'IN'); // Use 'role' instead of 'rid'
+  // Use 'role' instead of 'rid'.
+  $query->condition('ur.role', $notified_roles, 'IN');
   $query->condition('u.status', 1);
   $query->distinct();
 
