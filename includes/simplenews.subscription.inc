@@ -93,6 +93,10 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
   global $user;
 
   $account = $form['#user'];
+  $subscriber = simplenews_subscriber_load_by_mail($account->mail);
+  $existing_tids = ($subscriber && !empty($subscriber->tids)) ? array_keys($subscriber->tids) : array();
+  $new_tids = array_keys(array_filter($form_state['values']['newsletters']));
+  $subscriptions_changed = count(array_diff($existing_tids, $new_tids)) || count(array_diff($new_tids, $existing_tids));
 
   // We first subscribe, then unsubscribe. This prevents deletion of subscriptions
   // when unsubscribed from the
@@ -104,6 +108,9 @@ function simplenews_subscriptions_account_form_submit($form, &$form_state) {
     else {
       simplenews_unsubscribe_user($account->mail, $tid, FALSE, 'website');
     }
+  }
+  if (!$subscriptions_changed) {
+    return;
   }
   if ($user->uid == $account->uid) {
     backdrop_set_message(t('Your newsletter subscriptions have been updated.'));
