@@ -297,12 +297,14 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
       if ($row_result['status'] == SIMPLENEWS_SPOOL_DONE) {
         $count_success++;
         if (isset($row->actual_nid)) {
+          $tid = $row->tid ?? NULL;
           if (!isset($sent[$row->actual_nid])) {
-            $sent[$row->actual_nid] = 1;
+            $sent[$row->actual_nid] = array();
           }
-          else {
-            $sent[$row->actual_nid]++;
+          if (!isset($sent[$row->actual_nid][$tid])) {
+            $sent[$row->actual_nid][$tid] = 0;
           }
+          $sent[$row->actual_nid][$tid]++;
         }
       }
       if ($row_result['error']) {
@@ -311,11 +313,18 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
     }
 
     // Update subscriber count.
-    foreach ($sent as $nid => $count) {
-      db_update('simplenews_newsletter')
-        ->condition('nid', $nid)
-        ->expression('sent_subscriber_count', 'sent_subscriber_count + :count', array(':count' => $count))
-        ->execute();
+    foreach ($sent as $nid => $counts_by_tid) {
+      foreach ($counts_by_tid as $tid => $count) {
+        db_update('simplenews_newsletter')
+          ->condition('nid', $nid)
+          ->expression('sent_subscriber_count', 'sent_subscriber_count + :count', array(':count' => $count))
+          ->execute();
+        if ($tid !== NULL) {
+          $newsletter = simplenews_newsletter_load($nid, TRUE);
+          $current_count = $newsletter->sent_subscriber_count ?? 0;
+          simplenews_newsletter_status_save($nid, $tid, $newsletter->status ?? SIMPLENEWS_STATUS_SEND_PENDING, $current_count + $count);
+        }
+      }
     }
 
     // Report sent result and elapsed time. On Windows systems getrusage() is
@@ -648,10 +657,14 @@ function simplenews_send_status_update() {
   // Update overall newsletter status.
   if (!empty($send)) {
     foreach ($send as $nid) {
+      $newsletter = simplenews_newsletter_load($nid, TRUE);
       db_update('simplenews_newsletter')
         ->condition('nid', $nid)
         ->fields(array('status' => SIMPLENEWS_STATUS_SEND_READY))
         ->execute();
+      if ($newsletter) {
+        simplenews_newsletter_status_save($newsletter->nid, $newsletter->tid, SIMPLENEWS_STATUS_SEND_READY, $newsletter->sent_subscriber_count ?? 0, REQUEST_TIME);
+      }
       // Clear the node cache for this node so that the status shows correctly
       // when loaded.
       cache_clear_all($nid, 'cache_entity_node');

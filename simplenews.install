@@ -131,6 +131,59 @@ function simplenews_schema() {
     ),
   );
 
+  $schema['simplenews_newsletter_status'] = array(
+    'description' => 'Per-category send status for newsletter nodes.',
+    'fields' => array(
+      'nid' => array(
+        'description' => '{node} that is used as newsletter.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tid' => array(
+        'description' => 'The newsletter category {simplenews_category}.tid this newsletter belongs to.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Sent status for this nid+tid (0 = not sent; 1 = pending; 2 = sent, 3 = send on publish).',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sent_subscriber_count' => array(
+        'description' => 'The count of subscribers to the newsletter when it was sent for this category.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sent_timestamp' => array(
+        'description' => 'UNIX timestamp when this nid+tid was marked sent.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid', 'tid'),
+    'indexes' => array(
+      'tid' => array('tid'),
+      'status' => array('status'),
+    ),
+    'foreign keys' => array(
+      'nid' => array(
+        'table' => 'node',
+        'columns' => array('nid' => 'nid'),
+      ),
+      'tid' => array(
+        'table' => 'simplenews_category',
+        'columns' => array('tid' => 'tid'),
+      ),
+    ),
+  );
+
   $schema['simplenews_subscriber'] = array(
     'description' => 'Subscribers to {simplenews_category}. Many-to-many relation via {simplenews_subscription}',
     'fields' => array(
@@ -444,6 +497,7 @@ function simplenews_uninstall() {
   // Delete DB tables.
   db_delete('simplenews_mail_spool');
   db_delete('simplenews_newsletter');
+  db_delete('simplenews_newsletter_status');
   db_delete('simplenews_category');
   db_delete('simplenews_subscription');
   db_delete('simplenews_subscription_log');
@@ -532,6 +586,35 @@ function simplenews_update_1003() {
   }
 
   return t('Subscription history table added.');
+}
+
+/**
+ * Add per-category newsletter send status table and backfill existing rows.
+ */
+function simplenews_update_1004() {
+  $schema = simplenews_schema();
+
+  if (!db_table_exists('simplenews_newsletter_status')) {
+    db_create_table('simplenews_newsletter_status', $schema['simplenews_newsletter_status']);
+
+    // Seed with existing status data (one row per nid using current tid).
+    $existing = db_select('simplenews_newsletter', 'sn')
+      ->fields('sn', array('nid', 'tid', 'status', 'sent_subscriber_count'))
+      ->execute();
+    foreach ($existing as $row) {
+      db_insert('simplenews_newsletter_status')
+        ->fields(array(
+          'nid' => $row->nid,
+          'tid' => $row->tid,
+          'status' => $row->status,
+          'sent_subscriber_count' => $row->sent_subscriber_count,
+          'sent_timestamp' => ($row->status == SIMPLENEWS_STATUS_SEND_READY) ? REQUEST_TIME : 0,
+        ))
+        ->execute();
+    }
+  }
+
+  return t('Per-category newsletter status table added.');
 }
 
 

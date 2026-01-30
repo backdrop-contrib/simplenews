@@ -445,6 +445,16 @@ function simplenews_node_update($node) {
     // Update tid.
     $terms = simplenews_get_term_values($node);
     $node->simplenews->tid = $terms[0]['tid'];
+    // If there is existing per-category status for the new tid, apply it;
+    // otherwise reset to not sent for this category.
+    if ($status_row = simplenews_newsletter_status_load($node->nid, $node->simplenews->tid)) {
+      $node->simplenews->status = $status_row->status;
+      $node->simplenews->sent_subscriber_count = $status_row->sent_subscriber_count;
+    }
+    else {
+      $node->simplenews->status = SIMPLENEWS_STATUS_SEND_NOT;
+      $node->simplenews->sent_subscriber_count = 0;
+    }
   }
 
   // Check if the newsletter is set to send on publish and needs to be sent.
@@ -1979,19 +1989,41 @@ function simplenews_newsletter_load_multiple($nids = array(), $conditions = arra
     $newsletters = array();
     $query = db_select('simplenews_newsletter', 'sn');
     $query->innerJoin('taxonomy_term_data', 't', 't.tid = sn.tid');
-    $query->fields('sn')
-      ->fields('t', array('name', 'description', 'weight'))
-      ->orderBy('t.weight', 'ASC');
+
+    $has_status = db_table_exists('simplenews_newsletter_status');
+    if ($has_status) {
+      $query->leftJoin('simplenews_newsletter_status', 'sns', 'sns.nid = sn.nid AND sns.tid = sn.tid');
+      $query->addField('sns', 'status', 'status_override');
+      $query->addField('sns', 'sent_subscriber_count', 'sent_count_override');
+      $query->addField('sns', 'sent_timestamp', 'sent_timestamp');
+    }
+
+    $query->fields('sn');
+    $query->fields('t', array('name', 'description', 'weight'));
+    $query->orderBy('t.weight', 'ASC');
     if ($nids) {
-      $query->condition('nid', $nids);
+      $query->condition('sn.nid', $nids);
     }
     if ($conditions) {
       foreach ($conditions as $key => $condition) {
-        $query->condition($key, $condition);
+        // Qualify keys to avoid ambiguity when joins are present.
+        $qualified = (strpos($key, '.') === FALSE) ? 'sn.' . $key : $key;
+        $query->condition($qualified, $condition);
       }
     }
 
     $newsletters = $query->execute()->fetchAllAssoc('nid');
+
+    if ($has_status) {
+      foreach ($newsletters as $newsletter) {
+        if (isset($newsletter->status_override)) {
+          $newsletter->status = $newsletter->status_override;
+        }
+        if (isset($newsletter->sent_count_override)) {
+          $newsletter->sent_subscriber_count = $newsletter->sent_count_override;
+        }
+      }
+    }
   }
   return $newsletters;
 }
@@ -2010,8 +2042,11 @@ function simplenews_newsletter_save($newsletter) {
     ->fields(array(
       'tid' => $newsletter->tid,
       'status' => $newsletter->status,
+      'sent_subscriber_count' => isset($newsletter->sent_subscriber_count) ? $newsletter->sent_subscriber_count : 0,
     ))
     ->execute();
+
+  simplenews_newsletter_status_save($newsletter->nid, $newsletter->tid, $newsletter->status, isset($newsletter->sent_subscriber_count) ? $newsletter->sent_subscriber_count : 0);
 }
 
 /**
@@ -2032,6 +2067,32 @@ function simplenews_newsletter_delete($newsletter) {
       ->condition('nid', $newsletter->nid)
       ->execute();
   }
+}
+
+/**
+ * Store per-category send status.
+ */
+function simplenews_newsletter_status_save($nid, $tid, $status, $sent_count = 0, $sent_timestamp = NULL) {
+  db_merge('simplenews_newsletter_status')
+    ->key(array('nid' => $nid, 'tid' => $tid))
+    ->fields(array(
+      'status' => $status,
+      'sent_subscriber_count' => $sent_count,
+      'sent_timestamp' => isset($sent_timestamp) ? $sent_timestamp : (($status == SIMPLENEWS_STATUS_SEND_READY) ? REQUEST_TIME : 0),
+    ))
+    ->execute();
+}
+
+/**
+ * Load per-category send status.
+ */
+function simplenews_newsletter_status_load($nid, $tid) {
+  return db_select('simplenews_newsletter_status', 'sns')
+    ->fields('sns')
+    ->condition('nid', $nid)
+    ->condition('tid', $tid)
+    ->execute()
+    ->fetchObject();
 }
 
 /**
