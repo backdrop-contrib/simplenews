@@ -495,7 +495,7 @@ function simplenews_update_spool($msids, $data) {
     ->condition('msid', $msids)
     ->fields(array(
       'status' => $data['status'],
-      'error' => isset($result['error']) ? (int) $data['error'] : 0,
+      'error' => isset($data['error']) ? (int) $data['error'] : 0,
       'timestamp' => REQUEST_TIME,
     ))
     ->execute();
