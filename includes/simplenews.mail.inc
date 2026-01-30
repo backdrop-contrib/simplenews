@@ -126,6 +126,8 @@ function simplenews_send_test($node, $test_addresses) {
         $subscriber->language = $GLOBALS['language']->langcode;
       }
 
+      // Mark known users separately so messages reflect the account name.
+      $account = !empty($subscriber->uid) ? user_load($subscriber->uid) : NULL;
       if (!empty($account->uid)) {
         $recipients['user'][] = $account->name . ' <' . $mail . '>';
       }
