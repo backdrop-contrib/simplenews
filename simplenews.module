@@ -698,7 +698,8 @@ function simplenews_form_node_type_form_submit(&$form, $form_state) {
     simplenews_add_term_field($info);
   }
   else {
-    config_clear('simplenews.settings', 'simplenews_content_type_' . $form['#node_type']->type);
+    // Clear the active content type flag when a type is disabled.
+    config_clear('simplenews.settings', 'content_type_' . $form['#node_type']->type);
     simplenews_remove_term_field($info);
   }
 }
