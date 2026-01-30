@@ -1,60 +1,12 @@
-[SimplenewsTestCase]
-name = SimplenewsTestCase
-description = SimplenewsTestCase
-group =  SimpleNews
+[SimplenewsAdminSmokeTestCase]
+name = Simplenews admin smoke
+description = Minimal admin page and category creation smoke test for Simplenews.
+group = SimplenewsSmoke
 file = tests/simplenews.test
 
-[SimplenewsSubscribeTestCase]
-name = Subscribe and unsubscribe users
-description = (un)subscription of anonymous and authenticated users. Subscription via block, subscription page and account page
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimpleNewsAdministrationTestCase]
-name = SimpleNews administration
-description = Managing of newsletter categories and content types.
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimpleNewsI18nTestCase]
-name = SimpleNews I18n
-description = Translation of newsletter categories
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimpleNewsUpgradePathTestCase]
-name = SimpleNewsUpgradePathTestCase
-description = SimpleNewsUpgradePathTestCase
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimpleNewsUpgradePath61TestCase]
-name = SimpleNews 6.x-1.x upgrade path
-description = SimpleNews 6.x-1.x upgrade path tests.
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimpleNewsUpgradePath62TestCase]
-name = SimpleNews 6.x-2.x upgrade path
-description = SimpleNews 6.x-2.x upgrade path tests.
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimplenewsSendTestCase]
-name = Sending newsletters
-description = Creating and sending of newsletters, different send processes (with/without cron, send on publish)
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimplenewsSourceTestCase]
-name = Source tests
-description = Tests for the new source interfaces and concepts.
-group = SimpleNews
-file = tests/simplenews.test
-
-[SimplenewsUnitTest]
-name = Unit tests
-description = Unit tests for certain functions.
-group = SimpleNews
+[SimplenewsSubscriptionSmokeTestCase]
+name = Simplenews subscription smoke
+description = Minimal subscription smoke test for Simplenews.
+group = SimplenewsSmoke
 file = tests/simplenews.test
 

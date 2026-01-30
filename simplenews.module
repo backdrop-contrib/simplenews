@@ -742,7 +742,6 @@ function simplenews_taxonomy_term_delete(TaxonomyTerm $term) {
  * Implements hook_form_alter().
  */
 function simplenews_form_alter(&$form, &$form_state, $form_id) {
-  global $base_url;
   // Add SimpleNews settings to SimpleNews newsletter node form.
   if (!empty($form['#node_edit_form'])) {
     if (in_array($form['type']['#value'], simplenews_get_content_types())) {
@@ -1449,26 +1448,7 @@ function simplenews_get_subscriptions_by_list($tid) {
   return $query->execute()->fetchAllAssoc('mail');
 }
 
-/**
- * Update subscriber objects in the database.
- *
- * @param $conditions
- *   Array of selection conditions. e.g., array('tid' => 5, 'snid' => 12).
- * @param $data
- *   Associative array of database fields to be updated.
- *
- * @todo Replace with simplenews_subscription_save() ?
- *
- * @ingroup subscription
- */
-function simplenews_subscription_update($conditions, $data) {
-  $query = db_update('simplenews_subscription');
-  foreach ($conditions as $key => $condition) {
-    $query->condition($key, $condition);
-  }
-  $query->fields($data);
-  $query->execute();
-}
+// Removed unused Drupal-era helper simplenews_subscription_update(); updates are handled via simplenews_subscription_save().
 
 /**
  * Save a subscription.
@@ -2096,60 +2076,7 @@ function simplenews_format_options() {
   return $format_options;
 }
 
-/**
- * Implements hook_variable_info().
- */
-function simplenews_variable_info($options) {
-  $variable['simplenews_confirm_subscribe_subject'] = array(
-    'title' => t('SimpleNews confirmation subject'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_subscribe_unsubscribed'] = array(
-    'title' => t('SimpleNews subscription confirmation body'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_subscribe_subscribed'] = array(
-    'title' => t('SimpleNews subscribed confirmation body (already subscribed)'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_unsubscribe_subscribed'] = array(
-    'title' => t('SimpleNews unsubscription confirmation body'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_unsubscribe_unsubscribed'] = array(
-    'title' => t('SimpleNews unsubscription confirmation body (not subscribed)'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_subject'] = array(
-    'title' => t('SimpleNews combined confirmation subject'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_body'] = array(
-    'title' => t('SimpleNews combined confirmation body'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_body_unchanged'] = array(
-    'title' => t('SimpleNews combined confirmation body when there are no changes.'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_line_subscribe_unsubscribed'] = array(
-    'title' => t('SimpleNews combined confirmation subscribe line'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_line_subscribe_subscribed'] = array(
-    'title' => t('SimpleNews combined confirmation already subscribed line'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_line_unsubscribe_subscribed'] = array(
-    'title' => t('SimpleNews combined confirmation unsubscribe line'),
-    'localize' => TRUE,
-  );
-  $variable['simplenews_confirm_combined_line_unsubscribe_unsubscribed'] = array(
-    'title' => t('SimpleNews combined confirmation not subscribed line'),
-    'localize' => TRUE,
-  );
-  return $variable;
-}
+// Removed Drupal-era hook_variable_info(); Backdrop uses config for these texts.
 
 /**
  * Generate default and custom subscription confirmation email text.

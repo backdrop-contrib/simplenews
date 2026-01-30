@@ -949,13 +949,12 @@ class SimplenewsHTMLTestingMailSystem implements MailSystemInterface {
    * Implements MailSystemInterface::mail().
    */
   public function mail(array $message) {
-    // @todo This variable was probably removed in Backdrop without replacement.
-    $captured_emails = variable_get('backdrop_test_email_collector', array());
+    // Store captured emails in state for tests/development.
+    $captured_emails = state_get('backdrop_test_email_collector', array());
     $captured_emails[] = $message;
     // @todo This is rather slow when sending 100 and more mails during tests.
     // Investigate in other methods like APC shared memory.
-    // @todo This variable was probably removed in Backdrop without replacement.
-    variable_set('backdrop_test_email_collector', $captured_emails);
+    state_set('backdrop_test_email_collector', $captured_emails);
     return TRUE;
   }
 
