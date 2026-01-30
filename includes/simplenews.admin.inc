@@ -1953,7 +1953,8 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
     backdrop_set_message(t('No newsletters have been selected for this page. Please choose one to proceed.'), 'error');
     backdrop_goto('/node/' . $node->nid . '/edit');
   }
-  elseif ($simplenews_term->vocabulary = !'newsletter') {
+  elseif ($simplenews_term->vocabulary != 'newsletter') {
+    // Only allow terms from the newsletter vocabulary on the send tab.
     backdrop_set_message(t('Category selected for this page is not a newsletter category. Please choose a newsletter category.'), 'error');
     backdrop_goto('/node/' . $node->nid . '/edit');
   }
