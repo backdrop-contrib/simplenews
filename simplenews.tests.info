@@ -10,3 +10,9 @@ description = Minimal subscription smoke test for Simplenews.
 group = SimplenewsSmoke
 file = tests/simplenews.test
 
+[SimplenewsSubscriptionHistoryTestCase]
+name = Simplenews subscription history
+description = Logs and renders subscription history for subscribers.
+group = SimplenewsHistory
+file = tests/simplenews.test
+

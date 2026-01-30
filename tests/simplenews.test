@@ -111,3 +111,100 @@ class SimplenewsSubscriptionSmokeTestCase extends BackdropWebTestCase {
   }
 
 }
+
+class SimplenewsSubscriptionHistoryTestCase extends BackdropWebTestCase {
+
+  // Use testing profile for fast installs.
+  protected $profile = 'testing';
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Simplenews subscription history',
+      'description' => 'Ensures subscription changes are logged and visible to admins.',
+      'group' => 'SimplenewsHistory',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp(array('taxonomy', 'simplenews'));
+  }
+
+  /**
+   * Verify history entries are recorded and rendered.
+   */
+  public function testHistoryIsLoggedAndRendered() {
+    $admin = $this->backdropCreateUser(array(
+      'administer newsletters',
+      'administer simplenews subscriptions',
+      'administer taxonomy',
+    ));
+    $this->backdropLogin($admin);
+
+    $newsletter = entity_create('taxonomy_term', array(
+      'vocabulary' => 'newsletter',
+      'name' => $this->randomName(),
+    ));
+    taxonomy_term_save($newsletter);
+
+    // Add a corresponding Simplenews category record so subscribe/unsubscribe
+    // operations have configuration to reference.
+    $category = new stdClass();
+    $category->tid = $newsletter->tid;
+    $category->from_name = config_get('system.core', 'site_name');
+    $category->email_subject = '[[simplenews-category:name]] [node:title]';
+    $category->from_address = config_get('system.core', 'site_mail');
+    $category->format = 'plain';
+    $category->priority = SIMPLENEWS_PRIORITY_NONE;
+    $category->receipt = 0;
+    $category->hyperlinks = 1;
+    $category->new_account = 'none';
+    $category->opt_inout = 'double';
+    $category->block = 0;
+    simplenews_category_save($category);
+
+    $mail = $this->randomEmail();
+
+    simplenews_subscribe_user($mail, $newsletter->tid, FALSE, 'simpletest');
+    simplenews_unsubscribe_user($mail, $newsletter->tid, FALSE, 'simpletest');
+    simplenews_subscribe_user($mail, $newsletter->tid, FALSE, 'simpletest');
+
+    $subscriber = simplenews_subscriber_load_by_mail($mail);
+    $this->assertTrue(!empty($subscriber), t('Subscriber created.'));
+
+    $statuses = db_select('simplenews_subscription_log', 'sl')
+      ->fields('sl', array('status'))
+      ->condition('snid', $subscriber->snid)
+      ->orderBy('logid', 'ASC')
+      ->execute()
+      ->fetchCol();
+
+    $expected = array(
+      SIMPLENEWS_SUBSCRIPTION_STATUS_SUBSCRIBED,
+      SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED,
+      SIMPLENEWS_SUBSCRIPTION_STATUS_SUBSCRIBED,
+    );
+    $normalized = array_map('intval', $statuses);
+    $this->assertTrue(in_array(SIMPLENEWS_SUBSCRIPTION_STATUS_SUBSCRIBED, $normalized, TRUE), t('Subscribed status logged.'));
+    $this->assertTrue(in_array(SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED, $normalized, TRUE), t('Unsubscribed status logged.'));
+    $this->assertEqual(end($normalized), SIMPLENEWS_SUBSCRIPTION_STATUS_SUBSCRIBED, t('Latest entry reflects resubscribe.'));
+
+    $this->backdropGet('admin/people/simplenews/users/edit/' . $subscriber->snid);
+    $this->assertResponse(200);
+    $this->assertText(t('Subscription history'));
+    $this->assertText(t('Subscribed'));
+  }
+
+  /**
+   * Generate a random email address.
+   */
+  protected function randomEmail($number = 8, $domain = 'example.com') {
+    return backdrop_strtolower($this->randomName($number) . '@' . $domain);
+  }
+
+}

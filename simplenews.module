@@ -1468,6 +1468,9 @@ function simplenews_subscription_save($subscription) {
         'source' => $subscription->source,
       ))
       ->execute();
+
+    // Record a history entry for this change.
+    simplenews_subscription_log_event($subscription);
   }
 }
 
@@ -1677,6 +1680,41 @@ function simplenews_subscriber_delete(stdClass $subscriber) {
     ->condition('snid', $subscriber->snid)
     ->execute();
   module_invoke_all('simplenews_subscriber_delete', $subscriber);
+}
+
+/**
+ * Map a subscription status to a readable label.
+ */
+function simplenews_subscription_status_label($status) {
+  switch ($status) {
+    case SIMPLENEWS_SUBSCRIPTION_STATUS_SUBSCRIBED:
+      return t('Subscribed');
+
+    case SIMPLENEWS_SUBSCRIPTION_STATUS_UNCONFIRMED:
+      return t('Unconfirmed');
+
+    case SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED:
+    default:
+      return t('Unsubscribed');
+  }
+}
+
+/**
+ * Persist a subscription history event.
+ */
+function simplenews_subscription_log_event($subscription) {
+  global $user;
+
+  db_insert('simplenews_subscription_log')
+    ->fields(array(
+      'snid' => $subscription->snid,
+      'tid' => $subscription->tid,
+      'status' => $subscription->status,
+      'source' => !empty($subscription->source) ? $subscription->source : 'unknown',
+      'uid' => isset($user->uid) ? $user->uid : 0,
+      'created' => !empty($subscription->timestamp) ? $subscription->timestamp : REQUEST_TIME,
+    ))
+    ->execute();
 }
 
 /**

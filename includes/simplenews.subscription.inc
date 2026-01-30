@@ -908,6 +908,61 @@ function simplenews_subscriptions_admin_form($form, &$form_state, $snid) {
     '#weight' => 20,
   );
 
+  // Show subscription history for this subscriber.
+  if (db_table_exists('simplenews_subscription_log')) {
+    $history_header = array(
+      array('data' => t('Newsletter')),
+      array('data' => t('Action')),
+      array('data' => t('Source')),
+      array('data' => t('Actor')),
+      array('data' => t('Date')),
+    );
+
+    $history_query = db_select('simplenews_subscription_log', 'sl')->extend('PagerDefault');
+    $history_query->leftJoin('taxonomy_term_data', 't', 't.tid = sl.tid');
+    $history_query->leftJoin('users', 'u', 'u.uid = sl.uid');
+    $history_query->fields('sl', array('tid', 'status', 'source', 'uid', 'created', 'logid'));
+    $history_query->addField('t', 'name', 'newsletter');
+    $history_query->addField('u', 'name', 'username');
+    $history_query->condition('sl.snid', $subscriber->snid);
+    $history_query->orderBy('sl.logid', 'DESC');
+    $history_query->limit(25);
+
+    $rows = array();
+    foreach ($history_query->execute() as $entry) {
+      $actor = t('System');
+      if ($entry->uid) {
+        $actor_name = $entry->username ? $entry->username : t('User @uid', array('@uid' => $entry->uid));
+        $actor = l(check_plain($actor_name), 'user/' . $entry->uid);
+      }
+
+      $rows[] = array(
+        check_plain($entry->newsletter ? $entry->newsletter : t('Unknown newsletter')),
+        check_plain(simplenews_subscription_status_label($entry->status)),
+        check_plain($entry->source ? $entry->source : t('unknown')),
+        $actor,
+        format_date($entry->created, 'short'),
+      );
+    }
+
+    $form['history'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Subscription history'),
+      '#weight' => 30,
+    );
+
+    $form['history']['log'] = array(
+      '#theme' => 'table',
+      '#header' => $history_header,
+      '#rows' => $rows,
+      '#empty' => t('No subscription changes recorded.'),
+    );
+
+    $form['history']['pager'] = array(
+      '#markup' => theme('pager'),
+    );
+  }
+
   $form['#validate'][] = 'simplenews_subscriptions_admin_form_validate';
   $form['#submit'][] = 'simplenews_subscriptions_admin_form_submit';
   $form['#redirect'] = 'admin/content/simplenews/users';

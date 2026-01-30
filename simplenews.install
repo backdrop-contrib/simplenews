@@ -250,6 +250,71 @@ function simplenews_schema() {
     // @todo add foreign keys to other tables too?
   );
 
+  $schema['simplenews_subscription_log'] = array(
+    'description' => 'History of subscription status changes.',
+    'fields' => array(
+      'logid' => array(
+        'description' => 'Primary key: unique log entry.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'snid' => array(
+        'description' => 'The {simplenews_subscriber}.snid for this change.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tid' => array(
+        'description' => 'The {simplenews_category}.tid of the newsletter.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Subscription status at the time of the change.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'source' => array(
+        'description' => 'Source of the change (e.g. website, mass subscribe).',
+        'type' => 'varchar',
+        'length' => 24,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The acting user ID if known.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'UNIX timestamp when the change was recorded.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('logid'),
+    'indexes' => array(
+      'snid_tid_created' => array('snid', 'tid', 'created'),
+    ),
+    'foreign keys' => array(
+      'snid' => array(
+        'table' => 'simplenews_subscriber',
+        'columns' => array('snid' => 'snid'),
+      ),
+      'tid' => array(
+        'table' => 'simplenews_category',
+        'columns' => array('tid' => 'tid'),
+      ),
+    ),
+  );
+
   $schema['simplenews_mail_spool'] = array(
     'description' => 'Spool for temporary storage of newsletter emails.',
     'fields' => array(
@@ -381,6 +446,7 @@ function simplenews_uninstall() {
   db_delete('simplenews_newsletter');
   db_delete('simplenews_category');
   db_delete('simplenews_subscription');
+  db_delete('simplenews_subscription_log');
   db_delete('simplenews_subscriber');
 
   // Remove SimpleNews configuration file.
@@ -437,6 +503,35 @@ function simplenews_update_1002() {
   }
 
   return t('Configuration keys updated to remove the simplenews_ prefix.');
+}
+
+/**
+ * Add a subscription history log table and backfill current states.
+ */
+function simplenews_update_1003() {
+  $schema = simplenews_schema();
+  if (!db_table_exists('simplenews_subscription_log')) {
+    db_create_table('simplenews_subscription_log', $schema['simplenews_subscription_log']);
+
+    // Backfill one entry per existing subscription so history starts populated.
+    $existing = db_select('simplenews_subscription', 'ss')
+      ->fields('ss', array('snid', 'tid', 'status', 'timestamp', 'source'))
+      ->execute();
+    foreach ($existing as $row) {
+      db_insert('simplenews_subscription_log')
+        ->fields(array(
+          'snid' => $row->snid,
+          'tid' => $row->tid,
+          'status' => $row->status,
+          'source' => $row->source,
+          'uid' => 0,
+          'created' => $row->timestamp ?: REQUEST_TIME,
+        ))
+        ->execute();
+    }
+  }
+
+  return t('Subscription history table added.');
 }
 
 
