@@ -933,6 +933,19 @@ function simplenews_user_insert($account) {
     simplenews_subscriber_save($subscriber);
   }
 
+  // Automatically subscribe programmatically-created users to newsletters
+  // that are "Default on" or "Silent" when no explicit selection was
+  // provided (e.g., no registration form checkboxes present).
+  $has_explicit_selection = isset($account->newsletters) || isset($account->simplenews_hidden);
+  if (!$has_explicit_selection) {
+    foreach (simplenews_categories_load_multiple() as $newsletter) {
+      if ($newsletter->new_account === 'on' || $newsletter->new_account === 'silent') {
+        $language = $account->langcode ?? $account->language ?? NULL;
+        simplenews_subscribe_user($account->mail, $newsletter->tid, FALSE, 'website', $language);
+      }
+    }
+  }
+
   // Process subscription check boxes.
   if (isset($account->newsletters)) {
     $nl_tids = array_keys(array_filter($account->newsletters));

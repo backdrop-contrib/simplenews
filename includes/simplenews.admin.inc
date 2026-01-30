@@ -469,7 +469,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#title' => t('Subscribe new account'),
     '#options' => $options,
     '#default_value' => $edit['new_account'],
-    '#description' => t('None: This newsletter is not listed on the user registration page.<br />Default on: This newsletter is listed on the user registration page and is selected by default.<br />Default off: This newsletter is listed on the user registration page and is not selected by default.<br />Silent: A new user is automatically subscribed to this newsletter. The newsletter is not listed on the user registration page.'),
+    '#description' => t('None: This newsletter is not listed on the user registration page.<br />Default on: This newsletter is listed on the user registration page, is selected by default, and also applies to users created programmatically.<br />Default off: This newsletter is listed on the user registration page and is not selected by default.<br />Silent: A new user is automatically subscribed (no checkbox is shown on the registration form).'),
   );
 
   // Type of (un)subsribe confirmation.
