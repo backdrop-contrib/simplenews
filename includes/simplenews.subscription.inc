@@ -829,7 +829,7 @@ function simplenews_confirm_removal_form_submit($form, &$form_state) {
   $config = config('simplenews.settings');
   simplenews_unsubscribe_user($form_state['values']['mail'], $form_state['values']['newsletter']->tid, FALSE, 'website');
 
-  backdrop_set_message(t('You’ve successfully unsubscribed your email, %mail, from the %newsletter newsletter. We’re sorry to see you go!', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
+  backdrop_set_message(t('You have been unsubscribed. %mail will no longer receive the %newsletter newsletter. If this was a mistake, you can resubscribe anytime from our site.', array('%mail' => $form_state['values']['mail'], '%newsletter' => _simplenews_newsletter_name($form_state['values']['newsletter']))));
 
   if (!$path = $config->get('confirm_unsubscribe_page')) {
     $path = config_get('system.core', 'site_frontpage');
