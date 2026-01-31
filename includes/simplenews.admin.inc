@@ -1112,7 +1112,9 @@ function simplenews_subscription_list_remove($form, &$form_state) {
  * @todo
  */
 function simplenews_subscription_list_remove_submit($form, &$form_state) {
+  // Track which emails and which lists were actually unsubscribed.
   $removed = array();
+  $removed_tids = array();
   $invalid = array();
   $checked_lists = array_keys(array_filter($form_state['values']['newsletters']));
 
@@ -1147,8 +1149,10 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
   foreach ($emails as $email) {
     if (valid_email_address($email)) {
       foreach ($checked_lists as $tid) {
-        simplenews_unsubscribe_user($email, $tid, FALSE, 'mass unsubscribe');
-        $removed[] = $email;
+        if (simplenews_unsubscribe_user($email, $tid, FALSE, 'mass unsubscribe')) {
+          $removed[] = $email;
+          $removed_tids[] = $tid;
+        }
       }
     }
     else {
@@ -1163,7 +1167,7 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
     // Build human-readable list names; guard against missing category records
     // or empty translated names. Force a fresh load to avoid stale statics.
     $list_names = array();
-    foreach ($checked_lists as $tid) {
+    foreach (array_unique($removed_tids) as $tid) {
       $category = simplenews_category_load($tid, TRUE);
       if ($category) {
         $name = _simplenews_newsletter_name($category);
@@ -1186,7 +1190,7 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
     backdrop_set_message(t('The addresses were unsubscribed from the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
-    form_set_error('mail', t("No addresses were removed."));
+    form_set_error('mail', t("No addresses were removed (none were subscribed to the selected newsletters)."));
   }
   if (!empty($invalid[0])) {
     $invalid = implode(", ", $invalid);

@@ -1426,7 +1426,7 @@ function simplenews_unsubscribe_user($mail, $tid, $confirm = TRUE, $source = 'un
     }
     simplenews_confirmation_send('unsubscribe', $subscriber, simplenews_category_load($tid));
   }
-  elseif (isset($subscriber->tids[$tid])) {
+  elseif (!empty($subscriber) && isset($subscriber->tids[$tid])) {
     // Unsubscribe the user from the mailing list.
     $subscriber->newsletter_subscription[$tid]->status = SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED;
     $subscriber->newsletter_subscription[$tid]->timestamp = REQUEST_TIME;
@@ -1439,6 +1439,10 @@ function simplenews_unsubscribe_user($mail, $tid, $confirm = TRUE, $source = 'un
     simplenews_delete_spool(array('snid' => $subscriber->snid, 'tid' => $tid));
 
     module_invoke_all('simplenews_unsubscribe_user', $subscriber, $subscriber->newsletter_subscription[$tid]);
+  }
+  else {
+    // Nothing to do (already unsubscribed or never subscribed).
+    return FALSE;
   }
   return TRUE;
 }
