@@ -1331,6 +1331,15 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     ),
     '#default_value' => $config->get('send'),
   );
+  $form['simplenews_default_options']['send_progress_refresh'] = array(
+    '#type' => 'number',
+    '#title' => t('Delivery progress auto-refresh interval'),
+    '#description' => t('Seconds between automatic refreshes of the Send tab progress while messages are queued. Minimum 3 seconds. Set this close to your site cron interval to balance load and freshness.'),
+    '#default_value' => $config->get('send_progress_refresh') ?: 8,
+    '#min' => 3,
+    '#max' => 3600,
+    '#step' => 1,
+  );
   $form['simplenews_test_address'] = array(
     '#type' => 'fieldset',
     '#title' => t('Test addresses'),
@@ -1379,6 +1388,11 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
 function simplenews_admin_settings_newsletter_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['from_address'])) {
     form_set_error('from_address', t("The sender's email address you supplied is not valid."));
+  }
+
+  $refresh_seconds = (int) $form_state['values']['send_progress_refresh'];
+  if ($refresh_seconds < 3) {
+    form_set_error('send_progress_refresh', t('Auto-refresh interval must be at least 3 seconds.'));
   }
 }
 
@@ -2049,13 +2063,20 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
   $bar_inner_style = 'height:12px;border-radius:6px;background:#5cb85c;width:' . $percent . '%;transition:width 0.3s;';
   $status_style = 'display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:' . $status_bg . ';color:' . $status_fg . ';';
 
-  $progress_markup = '<div class="sn-progress-summary">' .
+  $refresh_seconds = (int) $config->get('send_progress_refresh');
+  if ($refresh_seconds < 3) {
+    $refresh_seconds = 8;
+  }
+
+  $progress_markup = '<div class="sn-progress-wrapper" data-pending="' . $pending_count . '">' .
+    '<div class="sn-progress-summary">' .
     t('@sent of @total delivered', array('@sent' => $sent_count, '@total' => $total_count)) .
     '</div>' .
     '<div class="sn-progress-bar" style="' . $bar_outer_style . '"><div style="' . $bar_inner_style . '"></div></div>' .
     '<div class="sn-progress-queue">' . t('Queued to send: @pending', array('@pending' => $pending_count)) . '</div>' .
     '<div class="sn-progress-status" style="margin-top:6px;">' . t('Status: !status', array('!status' => '<span style="' . $status_style . '">' . check_plain($status_label) . '</span>')) . '</div>' .
-    '<div class="sn-progress-note" style="margin-top:4px;color:#666;">' . t('Updating automatically while messages remain queued.') . '</div>';
+    '<div class="sn-progress-note" style="margin-top:4px;color:#666;' . ($pending_count ? '' : 'display:none;') . '">' . t('Updating automatically. Next refresh in @sec seconds.', array('@sec' => $refresh_seconds)) . '</div>' .
+    '</div>';
 
   $form['simplenews']['send_progress'] = array(
     '#type' => 'item',
@@ -2069,7 +2090,7 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
   $auto_refresh = ($pending_count > 0);
   $form['#attached']['js'][] = array(
     'type' => 'inline',
-    'data' => '(function ($) { Backdrop.behaviors.simplenewsSendProgress = { attach: function (context) { $("#simplenews-node-tab-send-form", context).once("simplenews-send-refresh").each(function () { var hasPending = ' . ($auto_refresh ? 'true' : 'false') . '; if (hasPending) { var timer = setInterval(function () { window.location.reload(); }, 8000); $(this).data("simplenewsSendRefreshTimer", timer); } else { var timer = $(this).data("simplenewsSendRefreshTimer"); if (timer) { clearInterval(timer); } } }); } }; })(jQuery);',
+    'data' => '(function ($) { Backdrop.behaviors.simplenewsSendProgress = { attach: function (context) { $("#simplenews-node-tab-send-form", context).once("simplenews-send-refresh").each(function () { var hasPending = ' . ($auto_refresh ? 'true' : 'false') . '; var refreshSec = ' . $refresh_seconds . '; var $form = $(this); var $wrapper = $(".sn-progress-wrapper", this); var $note = $(".sn-progress-note", this); var tick; var remaining = refreshSec; function setNote(sec) { if ($note.length) { $note.show().text(Backdrop.t("Updating automatically. Next refresh in @sec seconds.", {"@sec": sec})); } } function refreshProgress() { $.get(window.location.href, function (response) { var $resp = $(response); var $newWrapper = $resp.filter(".sn-progress-wrapper"); if (!$newWrapper.length) { $newWrapper = $resp.find(".sn-progress-wrapper"); } if (!$newWrapper.length) { return; } $wrapper.replaceWith($newWrapper); $wrapper = $newWrapper; $note = $(".sn-progress-note", $wrapper); var pendingAttr = parseInt($wrapper.data("pending"), 10); hasPending = pendingAttr > 0; if (!hasPending) { if ($note.length) { $note.hide(); } if (tick) { clearInterval(tick); } return; } remaining = refreshSec; setNote(remaining); }); } if (hasPending) { setNote(remaining); tick = setInterval(function () { remaining--; if (remaining <= 0) { refreshProgress(); } else { setNote(remaining); } }, 1000); $form.data("simplenewsSendRefreshTimer", tick); } else { if ($note.length) { $note.hide(); } tick = $form.data("simplenewsSendRefreshTimer"); if (tick) { clearInterval(tick); } } }); } }; })(jQuery);',
   );
 
   // Translations of newsletters don't have the 'send' option. Only the
