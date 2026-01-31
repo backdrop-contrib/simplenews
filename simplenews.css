@@ -1,3 +1,11 @@
+#simplenews-confirm-removal-form .description {
+  background: #eee;
+  padding: 8px 10px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  color: #555;
+  margin-bottom: 0.75em;
+}
 
 #simplenews-admin-filter .form-item {
   clear: both;

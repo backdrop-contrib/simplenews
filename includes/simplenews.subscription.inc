@@ -806,8 +806,29 @@ function simplenews_mask_mail($mail) {
  */
 function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter) {
   $form = array();
+  $form['#attached']['css'][] = backdrop_get_path('module', 'simplenews') . '/simplenews.css';
   $form['question'] = array(
     '#markup' => '<p>' . t('Are you sure you want to remove %mail from the %newsletter mailing list?', array('%mail' => simplenews_mask_mail($mail), '%newsletter' => _simplenews_newsletter_name($newsletter))) . "<p>\n",
+    '#weight' => 0,
+  );
+  if (!empty($newsletter->description)) {
+    $format = !empty($newsletter->format) ? $newsletter->format : filter_default_format();
+    $raw_description = _simplenews_newsletter_description($newsletter);
+    $rendered_description = check_markup($raw_description, $format);
+    // Fallback to plain text if filtering strips everything (e.g., missing/invalid format).
+    if ($rendered_description === '' && $raw_description !== '') {
+      $rendered_description = check_plain($raw_description);
+    }
+    if ($rendered_description !== '') {
+      $form['newsletter_description'] = array(
+        '#markup' => '<div class="description">' . $rendered_description . '</div>',
+        '#weight' => 1,
+      );
+    }
+  }
+  $form['action_notice'] = array(
+    '#markup' => '<p>' . t('This action will unsubscribe you from the newsletter mailing list.') . '</p>',
+    '#weight' => 2,
   );
   $form['mail'] = array(
     '#type' => 'value',
@@ -818,7 +839,7 @@ function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter
     '#value' => $newsletter,
   );
 
-  return confirm_form($form, t('Confirm remove subscription'), '', t('This action will unsubscribe you from the newsletter mailing list.'), t('Unsubscribe'), t('Cancel')
+  return confirm_form($form, t('Confirm remove subscription'), '', '', t('Unsubscribe'), t('Cancel')
   );
 }
 
