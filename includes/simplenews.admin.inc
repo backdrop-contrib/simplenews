@@ -1988,6 +1988,90 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
     '#tree' => TRUE,
   );
 
+  // Show send progress inside the Send newsletter fieldset so admins can see
+  // how many have gone out vs remain.
+  module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
+  // Reload newsletter to avoid stale counts after sending.
+  $fresh_newsletter = simplenews_newsletter_load($node->nid, TRUE);
+  $sent_from_newsletter = !empty($fresh_newsletter->sent_subscriber_count) ? $fresh_newsletter->sent_subscriber_count : 0;
+
+  // Also check the per-category status table to pick up the latest persisted
+  // count, even if the main newsletter row hasn’t been updated yet.
+  $sent_from_status = 0;
+  $tid_for_status = $fresh_newsletter->tid ?? (!empty($simplenews_values->tid) ? $simplenews_values->tid : NULL);
+  if ($tid_for_status) {
+    if ($status_row = simplenews_newsletter_status_load($node->nid, $tid_for_status)) {
+      $sent_from_status = $status_row->sent_subscriber_count ?? 0;
+    }
+  }
+
+  // Also look at the spool for DONE (or expired IN_PROGRESS) messages to show
+  // in-flight progress before persistence catches up.
+  $sent_count_query = db_select('simplenews_mail_spool')
+    ->condition('nid', $node->nid)
+    ->condition(db_or()
+      ->condition('status', SIMPLENEWS_SPOOL_DONE)
+      ->condition(db_and()
+        ->condition('status', SIMPLENEWS_SPOOL_IN_PROGRESS)
+        ->condition('timestamp', simplenews_get_expiration_time(), '<='))
+    )
+    ->countQuery();
+  $sent_from_spool = (int) $sent_count_query->execute()->fetchField();
+
+  $sent_count = max($sent_from_newsletter, $sent_from_status, $sent_from_spool);
+  $pending_count = simplenews_count_spool(array('nid' => $node->nid));
+  $total_count = $sent_count + $pending_count;
+  $percent = $total_count ? round(($sent_count / $total_count) * 100) : 0;
+
+  // Friendly status label + color.
+  if ($pending_count > 0 && $sent_count > 0) {
+    $status_label = t('Sending');
+    $status_bg = '#f0ad4e';
+    $status_fg = '#2b2b2b';
+  }
+  elseif ($pending_count > 0 && $sent_count == 0) {
+    $status_label = t('Ready to send');
+    $status_bg = '#5bc0de';
+    $status_fg = '#0f2a33';
+  }
+  elseif ($pending_count == 0 && $sent_count > 0) {
+    $status_label = t('All sent');
+    $status_bg = '#5cb85c';
+    $status_fg = '#0f2910';
+  }
+  else {
+    $status_label = t('Not started');
+    $status_bg = '#d9d9d9';
+    $status_fg = '#333';
+  }
+
+  $bar_outer_style = 'margin-top:6px;height:12px;border-radius:6px;background:#e5e5e5;overflow:hidden;';
+  $bar_inner_style = 'height:12px;border-radius:6px;background:#5cb85c;width:' . $percent . '%;transition:width 0.3s;';
+  $status_style = 'display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:' . $status_bg . ';color:' . $status_fg . ';';
+
+  $progress_markup = '<div class="sn-progress-summary">' .
+    t('@sent of @total delivered', array('@sent' => $sent_count, '@total' => $total_count)) .
+    '</div>' .
+    '<div class="sn-progress-bar" style="' . $bar_outer_style . '"><div style="' . $bar_inner_style . '"></div></div>' .
+    '<div class="sn-progress-queue">' . t('Queued to send: @pending', array('@pending' => $pending_count)) . '</div>' .
+    '<div class="sn-progress-status" style="margin-top:6px;">' . t('Status: !status', array('!status' => '<span style="' . $status_style . '">' . check_plain($status_label) . '</span>')) . '</div>' .
+    '<div class="sn-progress-note" style="margin-top:4px;color:#666;">' . t('Updating automatically while messages remain queued.') . '</div>';
+
+  $form['simplenews']['send_progress'] = array(
+    '#type' => 'item',
+    '#title' => t('Delivery progress'),
+    '#markup' => $progress_markup,
+    '#weight' => 50,
+    '#suffix' => '<hr />',
+  );
+
+  // Auto-refresh the tab while messages remain queued; stop once all sent.
+  $auto_refresh = ($pending_count > 0);
+  $form['#attached']['js'][] = array(
+    'type' => 'inline',
+    'data' => '(function ($) { Backdrop.behaviors.simplenewsSendProgress = { attach: function (context) { $("#simplenews-node-tab-send-form", context).once("simplenews-send-refresh").each(function () { var hasPending = ' . ($auto_refresh ? 'true' : 'false') . '; if (hasPending) { var timer = setInterval(function () { window.location.reload(); }, 8000); $(this).data("simplenewsSendRefreshTimer", timer); } else { var timer = $(this).data("simplenewsSendRefreshTimer"); if (timer) { clearInterval(timer); } } }); } }; })(jQuery);',
+  );
+
   // Translations of newsletters don't have the 'send' option. Only the
   // translation source (and non translated) newsletters will get these options.
   if (module_exists('translation') && translation_supported_type($node->type) && (isset($node->translate) && ($node->tnid > 0) && ($node->tnid != $node->nid))) {

@@ -246,6 +246,7 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
     simplenews_impersonate_user(backdrop_anonymous_user());
 
     $count_fail = $count_success = 0;
+    // Track sent counts per nid/tid to update stats later.
     $sent = array();
 
     _simplenews_measure_usec(TRUE);
@@ -263,11 +264,16 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
         simplenews_update_spool(array($msid), $row_result);
         if ($row_result['status'] == SIMPLENEWS_SPOOL_DONE) {
           $count_success++;
-          if (!isset($sent[$row->actual_nid])) {
-            $sent[$row->actual_nid] = 1;
-          }
-          else {
-            $sent[$row->actual_nid]++;
+          $nid = $row->actual_nid ?? $row->nid ?? NULL;
+          $tid = $row->tid ?? NULL;
+          if ($nid !== NULL) {
+            if (!isset($sent[$nid])) {
+              $sent[$nid] = array();
+            }
+            if (!isset($sent[$nid][$tid])) {
+              $sent[$nid][$tid] = 0;
+            }
+            $sent[$nid][$tid]++;
           }
         }
         if ($row_result['error']) {
@@ -296,15 +302,16 @@ function simplenews_mail_spool($limit = SIMPLENEWS_UNLIMITED, array $conditions 
       simplenews_update_spool(array($msid), $row_result);
       if ($row_result['status'] == SIMPLENEWS_SPOOL_DONE) {
         $count_success++;
-        if (isset($row->actual_nid)) {
-          $tid = $row->tid ?? NULL;
-          if (!isset($sent[$row->actual_nid])) {
-            $sent[$row->actual_nid] = array();
+        $nid = $row->actual_nid ?? $row->nid ?? NULL;
+        $tid = $row->tid ?? NULL;
+        if ($nid !== NULL) {
+          if (!isset($sent[$nid])) {
+            $sent[$nid] = array();
           }
-          if (!isset($sent[$row->actual_nid][$tid])) {
-            $sent[$row->actual_nid][$tid] = 0;
+          if (!isset($sent[$nid][$tid])) {
+            $sent[$nid][$tid] = 0;
           }
-          $sent[$row->actual_nid][$tid]++;
+          $sent[$nid][$tid]++;
         }
       }
       if ($row_result['error']) {
