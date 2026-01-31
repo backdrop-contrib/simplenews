@@ -245,7 +245,9 @@ function simplenews_menu() {
     'title' => 'Confirm newsletter subscriptions',
     'type' => MENU_CALLBACK,
     'page callback' => 'simplenews_confirm_subscription',
-    'access arguments' => array('subscribe to newsletters'),
+    'access callback' => 'simplenews_confirm_access',
+    // Pass op/hash so anonymous users with a valid token can access.
+    'access arguments' => array(2, 3),
     'file' => 'includes/simplenews.subscription.inc',
   );
 
@@ -2230,6 +2232,23 @@ function simplenews_private_key() {
     config_set('simplenews.settings', 'private_key', $key);
   }
   return $key;
+}
+
+/**
+ * Access callback for newsletter confirmation links.
+ */
+function simplenews_confirm_access($op = NULL, $hash = NULL) {
+  // Logged-in users with the permission always pass.
+  if (user_access('subscribe to newsletters')) {
+    return TRUE;
+  }
+
+  // Allow anonymous visitors holding a valid confirmation hash.
+  if (!empty($hash) && simplenews_subscriber_load_by_hash($hash)) {
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 /**
