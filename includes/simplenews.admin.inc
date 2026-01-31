@@ -850,17 +850,27 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
     }
   }
 
+  // Normalize and deduplicate collected emails (manual + role-based).
   $emails = array_unique(array_filter(array_map('trim', $emails)));
+  $emails = array_map('strtolower', $emails);
 
   foreach ($emails as $email) {
     if (valid_email_address($email)) {
       $subscriber = simplenews_subscriber_load_by_mail($email);
+      $unsubscribed_tids = array();
+      if ($checked_categories) {
+        $unsubscribed_tids = db_query('SELECT tid FROM {simplenews_subscriptions} WHERE mail = :mail AND tid IN (:tids[]) AND status = :status', array(
+          ':mail' => $email,
+          ':tids' => $checked_categories,
+          ':status' => SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED,
+        ))->fetchCol();
+      }
       foreach (simplenews_categories_load_multiple($checked_categories) as $category) {
         // If there is a valid subscriber, check if there is a subscription for
         // the current category and if this subscription has the status
         // unsubscribed.
-        $is_unsubscribed = $subscriber && array_key_exists($category->tid, $subscriber->newsletter_subscription)
-          && $subscriber->newsletter_subscription[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED;
+        $is_unsubscribed = (in_array($category->tid, $unsubscribed_tids, TRUE)) || ($subscriber && array_key_exists($category->tid, $subscriber->newsletter_subscription)
+          && $subscriber->newsletter_subscription[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
         if (!$is_unsubscribed || $form_state['values']['resubscribe'] == TRUE) {
           simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode);
           $added[] = $email;
