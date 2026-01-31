@@ -885,11 +885,72 @@ function simplenews_entity_info_alter(&$info) {
  * Implements hook_cron().
  */
 function simplenews_cron() {
+  // Ensure blocked users are not left subscribed.
+  simplenews_unsubscribe_blocked_accounts();
+
   module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
   simplenews_mail_spool(config_get('simplenews.settings', 'throttle'));
   simplenews_clear_spool();
   // Update sent status for newsletter admin panel.
   simplenews_send_status_update();
+}
+
+/**
+ * Implements hook_user_update().
+ */
+function simplenews_user_update($account) {
+  // If status changed from active to blocked, purge subscriptions.
+  $was_active = isset($account->original) ? (bool) $account->original->status : TRUE;
+  $is_blocked = !$account->status;
+  if ($was_active && $is_blocked) {
+    simplenews_unsubscribe_blocked_accounts(array($account->uid));
+  }
+}
+
+/**
+ * Unsubscribe all newsletter subscriptions for blocked users.
+ *
+ * @param array $uids
+ *   (optional) Specific user IDs to process. If empty, all blocked users.
+ *
+ * @return int
+ *   Number of subscriptions changed.
+ */
+function simplenews_unsubscribe_blocked_accounts(array $uids = array()) {
+  $query = db_select('simplenews_subscriber', 'ss')
+    ->fields('ss', array('snid'));
+  $query->join('users', 'u', 'u.uid = ss.uid');
+  $query->condition('u.status', 0);
+  if ($uids) {
+    $query->condition('u.uid', $uids, 'IN');
+  }
+  $snids = $query->execute()->fetchCol();
+
+  if (empty($snids)) {
+    return 0;
+  }
+
+  // Set any non-unsubscribed subscriptions for these subscribers to unsubscribed.
+  $updated = db_update('simplenews_subscription')
+    ->condition('snid', $snids, 'IN')
+    ->condition('status', SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED, '<>')
+    ->fields(array(
+      'status' => SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED,
+      'timestamp' => REQUEST_TIME,
+      'source' => 'blocked user',
+    ))
+    ->execute();
+
+  // Clear any queued mail for these subscribers.
+  module_load_include('inc', 'simplenews', 'includes/simplenews.mail');
+  foreach ($snids as $snid) {
+    simplenews_delete_spool(array('snid' => $snid));
+  }
+
+  // Clear static caches for affected subscribers.
+  simplenews_subscriber_load_multiple(array(), array(), TRUE);
+
+  return $updated;
 }
 
 /**
@@ -1331,8 +1392,8 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
   if (!$account) {
     $account = simplenews_load_user_by_mail($mail);
   }
-  if ($account && !$account->status) {
-    // Blocked accounts cannot subscribe/re-subscribe.
+  if ($account && isset($account->status) && $account->status === 0) {
+    // Blocked accounts cannot subscribe/re-subscribe. Anonymous/no-account is allowed.
     return FALSE;
   }
 

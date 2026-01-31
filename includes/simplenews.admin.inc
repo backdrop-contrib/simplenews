@@ -835,6 +835,8 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
   $invalid = array();
   $unsubscribed = array();
   $blocked = array();
+  // Ensure blocked users are purged before processing new subscriptions.
+  simplenews_unsubscribe_blocked_accounts();
   $checked_categories = array_keys(array_filter($form_state['values']['newsletters']));
   $langcode = $form_state['values']['language'];
 
@@ -1126,6 +1128,8 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
   $removed = array();
   $removed_tids = array();
   $invalid = array();
+  // Ensure blocked users are purged before processing.
+  simplenews_unsubscribe_blocked_accounts();
   $checked_lists = array_keys(array_filter($form_state['values']['newsletters']));
 
   $emails = preg_split("/[\s,]+/", $form_state['values']['emails']);
