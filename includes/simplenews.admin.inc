@@ -1156,14 +1156,33 @@ function simplenews_subscription_list_remove_submit($form, &$form_state) {
     }
   }
   if ($removed) {
-    $removed = implode(", ", $removed);
+    // Collapse duplicate emails so the confirmation reads cleanly.
+    $removed = implode(", ", array_unique($removed));
     backdrop_set_message(t('The following addresses were unsubscribed: %removed.', array('%removed' => $removed)));
 
-    $lists = simplenews_categories_load_multiple();
+    // Build human-readable list names; guard against missing category records
+    // or empty translated names. Force a fresh load to avoid stale statics.
     $list_names = array();
     foreach ($checked_lists as $tid) {
-      $list_names[] = _simplenews_newsletter_name($lists[$tid]);
+      $category = simplenews_category_load($tid, TRUE);
+      if ($category) {
+        $name = _simplenews_newsletter_name($category);
+        if ($name === '' || $name === NULL) {
+          // Try taxonomy term as a secondary source.
+          if ($term = taxonomy_term_load($tid)) {
+            $name = $term->name;
+          }
+        }
+        if ($name === '' || $name === NULL) {
+          $name = t('Newsletter @tid', array('@tid' => $tid));
+        }
+        $list_names[] = $name;
+      }
+      else {
+        $list_names[] = t('Unknown (ID @tid)', array('@tid' => $tid));
+      }
     }
+    $list_names = array_unique($list_names);
     backdrop_set_message(t('The addresses were unsubscribed from the following newsletters: %newsletters.', array('%newsletters' => implode(', ', $list_names))));
   }
   else {
