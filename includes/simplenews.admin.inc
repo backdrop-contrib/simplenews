@@ -1469,7 +1469,7 @@ function simplenews_admin_settings_mail($form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Log emails'),
     '#default_value' => $config->get('debug'),
-    '#description' => t('When checked, all outgoing SimpleNews emails are recorded in the system log. However, a logged email does not guarantee that it has been sent or will be delivered. It simply indicates that the message was passed to the PHP mail() function. Delivery status information is not available from the PHP mail() function.'),
+    '#description' => t('Logs outgoing SimpleNews emails at Debug severity. Logged means “handed to PHP mail()”, not delivered. Enable Debug severity at !logging to view entries.', array('!logging' => l(t('Configuration » Development » Logging and errors'), 'admin/config/development/logging'))),
   );
   return system_settings_form($form);
 }
