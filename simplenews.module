@@ -1309,10 +1309,15 @@ function simplenews_load_user_by_mail($mail) {
  *    mass subscribe: mass admin UI
  *    mass unsubscribe: mass admin UI
  *    action: Backdrop actions
+ * @param bool $allow_resubscribe
+ *   If FALSE, do not resubscribe addresses that have an existing subscription
+ *   record with status "unsubscribed". This allows UIs (like mass subscribe)
+ *   to honor a "force re-subscribe" flag. Defaults to TRUE for backwards
+ *   compatibility and to allow explicit opt-ins through public forms.
  *
  * @ingroup subscription
  */
-function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unknown', $preferred_language = NULL) {
+function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unknown', $preferred_language = NULL, $allow_resubscribe = TRUE) {
   global $language;
 
   // Get current subscriptions if any.
@@ -1370,6 +1375,10 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
     simplenews_confirmation_send('subscribe', $subscriber, simplenews_category_load($tid));
   }
   elseif (!isset($subscriber->tids[$tid]) && !empty($subscriber->snid)) {
+    // Respect prior unsubscribes when not explicitly allowed.
+    if (!$allow_resubscribe && isset($subscriber->newsletter_subscription[$tid]) && $subscriber->newsletter_subscription[$tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED) {
+      return FALSE;
+    }
     // Subscribe the user if not already subscribed.
     // @todo rewrite if subscription object is loaded in $subscriber->tids[$tid]
     $subscription = new stdClass();

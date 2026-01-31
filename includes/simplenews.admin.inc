@@ -887,7 +887,7 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
         $is_unsubscribed = (in_array($category->tid, $unsubscribed_tids, TRUE)) || ($subscriber && array_key_exists($category->tid, $subscriber->newsletter_subscription)
           && $subscriber->newsletter_subscription[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
         if (!$is_unsubscribed || $form_state['values']['resubscribe'] == TRUE) {
-          simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode);
+          simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode, $form_state['values']['resubscribe']);
           $added[] = $email;
         }
         else {
