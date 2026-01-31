@@ -589,8 +589,21 @@ function simplenews_get_content_types() {
  */
 function simplenews_add_term_field($type) {
   $field_name = config_get('simplenews.settings', 'category_field');
-  $field = field_info_field($field_name);
+  // Include deleted fields so we can rebuild cleanly.
+  $fields = field_read_fields(array('field_name' => $field_name), array('include_deleted' => TRUE));
+  $field = $fields ? reset($fields) : FALSE;
   $instance = field_info_instance('node', $field_name, $type->type);
+
+  // If a deleted field definition lingers, purge it so we can recreate it.
+  if ($field && !empty($field['deleted'])) {
+    // Purge lingering deleted instances before dropping the field.
+    $instances = field_read_instances(array('field_name' => $field_name), array('include_deleted' => TRUE));
+    foreach ($instances as $instance) {
+      field_purge_instance($instance);
+    }
+    field_purge_field($field);
+    $field = FALSE;
+  }
 
   if (empty($field)) {
     $field = array(
