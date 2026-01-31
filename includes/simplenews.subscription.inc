@@ -199,6 +199,13 @@ function simplenews_block_form_validate($form, &$form_state) {
   }
   // Prevent spam subscription attempts by anonymous users.
   else {
+    // Prevent blocked users from (re)subscribing.
+    $user_account = simplenews_load_user_by_mail($form_state['values']['mail']);
+    if ($user_account && !$user_account->status) {
+      form_set_error('mail', t('This account is blocked and cannot subscribe to newsletters.'));
+      return;
+    }
+
     $account = simplenews_subscriber_load_by_mail($form_state['values']['mail']);
     // Run further checks only for emails with subscription accounts already created.
     if ($account && $account->uid == 0) {
@@ -363,6 +370,14 @@ function simplenews_subscriptions_page_form_validate($form, &$form_state) {
   }
   if (!$valid_email) {
     form_set_error('mail', t('The email address you entered appears to be invalid. Please double-check and try again.'));
+    return;
+  }
+
+  // Prevent blocked users from (re)subscribing via page/multi forms.
+  $user_account = simplenews_load_user_by_mail($form_state['values']['mail']);
+  if ($user_account && !$user_account->status) {
+    form_set_error('mail', t('This account is blocked and cannot subscribe to newsletters.'));
+    return;
   }
 
   $checked_newsletters = array_filter($form_state['values']['newsletters']);

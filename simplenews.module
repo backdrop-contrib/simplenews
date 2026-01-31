@@ -1323,6 +1323,19 @@ function simplenews_subscribe_user($mail, $tid, $confirm = TRUE, $source = 'unkn
   // Get current subscriptions if any.
   $subscriber = simplenews_subscriber_load_by_mail($mail);
 
+  // Determine the user account (if any) for blocked-user checks.
+  $account = NULL;
+  if ($subscriber && !empty($subscriber->uid)) {
+    $account = user_load($subscriber->uid);
+  }
+  if (!$account) {
+    $account = simplenews_load_user_by_mail($mail);
+  }
+  if ($account && !$account->status) {
+    // Blocked accounts cannot subscribe/re-subscribe.
+    return FALSE;
+  }
+
   // If user is not subscribed to ANY newsletter, create a subscription account
   if (!$subscriber) {
     // To subscribe a user:

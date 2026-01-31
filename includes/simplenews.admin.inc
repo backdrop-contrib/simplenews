@@ -834,6 +834,7 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
   $added = array();
   $invalid = array();
   $unsubscribed = array();
+  $blocked = array();
   $checked_categories = array_keys(array_filter($form_state['values']['newsletters']));
   $langcode = $form_state['values']['language'];
 
@@ -887,8 +888,12 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
         $is_unsubscribed = (in_array($category->tid, $unsubscribed_tids, TRUE)) || ($subscriber && array_key_exists($category->tid, $subscriber->newsletter_subscription)
           && $subscriber->newsletter_subscription[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
         if (!$is_unsubscribed || $form_state['values']['resubscribe'] == TRUE) {
-          simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode, $form_state['values']['resubscribe']);
-          $added[] = $email;
+          if (simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode, $form_state['values']['resubscribe'])) {
+            $added[] = $email;
+          }
+          else {
+            $blocked[] = $email;
+          }
         }
         else {
           $unsubscribed[check_plain(_simplenews_newsletter_name($category))][] = $email;
@@ -915,6 +920,11 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
   if ($invalid) {
     $invalid = implode(", ", $invalid);
     backdrop_set_message(t('The following addresses were invalid: %invalid.', array('%invalid' => $invalid)), 'error');
+  }
+
+  if ($blocked) {
+    $blocked = implode(", ", array_unique($blocked));
+    backdrop_set_message(t('The following addresses are blocked users and were not subscribed: %blocked.', array('%blocked' => $blocked)), 'warning');
   }
 
   foreach ($unsubscribed as $name => $subscribers) {
