@@ -746,6 +746,20 @@ function simplenews_subscription_list_add($form, &$form_state) {
     '#description' => t('Email addresses must be separated by comma, space or newline.'),
   );
 
+  $form['roles'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Subscribe users by role'),
+    '#description' => t('Select roles to subscribe all users assigned to them.'),
+    '#tree' => TRUE,
+  );
+
+  foreach (user_roles(TRUE) as $role_name => $role_label) {
+    $form['roles'][$role_name] = array(
+      '#type' => 'checkbox',
+      '#title' => check_plain($role_label),
+    );
+  }
+
   $form['newsletters'] = array(
     '#type' => 'fieldset',
     '#description' => t('Subscribe to'),
@@ -810,11 +824,35 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
   $langcode = $form_state['values']['language'];
 
   $emails = preg_split("/[\s,]+/", $form_state['values']['emails']);
-  foreach ($emails as $email) {
-    $email = trim($email);
-    if ($email == '') {
-      continue;
+
+  $selected_roles = !empty($form_state['values']['roles']) ? array_keys(array_filter($form_state['values']['roles'])) : array();
+  if ($selected_roles) {
+    $include_authenticated = in_array(BACKDROP_AUTHENTICATED_ROLE, $selected_roles, TRUE);
+    $role_filter = array_diff($selected_roles, array(BACKDROP_AUTHENTICATED_ROLE));
+
+    if ($role_filter) {
+      $role_query = db_select('users', 'u');
+      $role_query->join('users_roles', 'ur', 'u.uid = ur.uid');
+      $role_query->fields('u', array('mail'));
+      $role_query->condition('u.status', 1);
+      $role_query->condition('u.mail', '', '<>');
+      $role_query->condition('ur.role', $role_filter, 'IN');
+      $emails = array_merge($emails, $role_query->execute()->fetchCol());
     }
+
+    if ($include_authenticated) {
+      // Authenticated role is implicit; pull all active users with an email.
+      $auth_query = db_select('users', 'u')
+        ->fields('u', array('mail'))
+        ->condition('u.status', 1)
+        ->condition('u.mail', '', '<>');
+      $emails = array_merge($emails, $auth_query->execute()->fetchCol());
+    }
+  }
+
+  $emails = array_unique(array_filter(array_map('trim', $emails)));
+
+  foreach ($emails as $email) {
     if (valid_email_address($email)) {
       $subscriber = simplenews_subscriber_load_by_mail($email);
       foreach (simplenews_categories_load_multiple($checked_categories) as $category) {
