@@ -157,6 +157,8 @@ function simplenews_menu() {
     'page arguments' => array('simplenews_admin_subscription'),
     'access arguments' => array('administer simplenews subscriptions'),
     'file' => 'includes/simplenews.admin.inc',
+    'tab_root' => 'admin/people',
+    'tab_parent' => 'admin/people',
   );
   $items['admin/people/simplenews/users/edit/%'] = array(
     'title' => 'Subscriptions',
@@ -167,29 +169,38 @@ function simplenews_menu() {
   );
   $items['admin/people/simplenews/import'] = array(
     'title' => 'Mass subscribe',
-    'type' => MENU_LOCAL_ACTION,
+    'type' => MENU_LOCAL_TASK,
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_subscription_list_add'),
     'access arguments' => array('administer simplenews subscriptions'),
     'file' => 'includes/simplenews.admin.inc',
+    'context' => MENU_CONTEXT_PAGE,
+    'tab_root' => 'admin/people',
+    'tab_parent' => 'admin/people/simplenews',
     'weight' => 8,
   );
   $items['admin/people/simplenews/unsubscribe'] = array(
     'title' => 'Mass unsubscribe',
-    'type' => MENU_LOCAL_ACTION,
+    'type' => MENU_LOCAL_TASK,
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_subscription_list_remove'),
     'access arguments' => array('administer simplenews subscriptions'),
     'file' => 'includes/simplenews.admin.inc',
+    'context' => MENU_CONTEXT_PAGE,
+    'tab_root' => 'admin/people',
+    'tab_parent' => 'admin/people/simplenews',
     'weight' => 9,
   );
   $items['admin/people/simplenews/export'] = array(
     'title' => 'Export',
-    'type' => MENU_LOCAL_ACTION,
+    'type' => MENU_LOCAL_TASK,
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_subscription_list_export'),
     'access arguments' => array('administer simplenews subscriptions'),
     'file' => 'includes/simplenews.admin.inc',
+    'context' => MENU_CONTEXT_PAGE,
+    'tab_root' => 'admin/people',
+    'tab_parent' => 'admin/people/simplenews',
     'weight' => 10,
   );
   $items['admin/config/services/simplenews/settings'] = array(
