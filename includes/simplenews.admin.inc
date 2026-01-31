@@ -1298,9 +1298,8 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
   );
   $links = array(
     '!mime_mail_url' => 'https://backdropcms.org/project/mimemail',
-    '!html_url' => 'https://backdropcms.org/project/htmlmail',
   );
-  $description = t('Default newsletter format. Install <a href="!mime_mail_url">Mime Mail</a> module or <a href="!html_url">HTML Mail</a> module to send newsletters in HTML format.', $links);
+  $description = t('Default newsletter format. Install the <a href="!mime_mail_url">Mime Mail</a> module to send newsletters in HTML format.', $links);
   $form['simplenews_default_options']['format'] = array(
     '#type' => 'select',
     '#title' => t('Format'),
