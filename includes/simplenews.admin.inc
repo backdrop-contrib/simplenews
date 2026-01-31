@@ -1335,7 +1335,7 @@ function simplenews_admin_settings_newsletter($form, &$form_state) {
     '#type' => 'number',
     '#title' => t('Delivery progress auto-refresh interval'),
     '#description' => t('Seconds between automatic refreshes of the Send tab progress while messages are queued. Minimum 3 seconds. Set this close to your site cron interval to balance load and freshness.'),
-    '#default_value' => $config->get('send_progress_refresh') ?: 8,
+    '#default_value' => $config->get('send_progress_refresh') ?: 60,
     '#min' => 3,
     '#max' => 3600,
     '#step' => 1,
@@ -2065,7 +2065,7 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
 
   $refresh_seconds = (int) $config->get('send_progress_refresh');
   if ($refresh_seconds < 3) {
-    $refresh_seconds = 8;
+    $refresh_seconds = 60;
   }
 
   $progress_markup = '<div class="sn-progress-wrapper" data-pending="' . $pending_count . '">' .

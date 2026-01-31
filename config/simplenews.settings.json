@@ -3,7 +3,7 @@
     "format": "plain",
     "priority": 0,
     "send": 0,
-    "send_progress_refresh": 8,
+    "send_progress_refresh": 60,
     "use_cron": true,
     "source_cache": "SimplenewsSourceCacheBuild",
     "throttle": "20",
