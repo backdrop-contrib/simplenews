@@ -852,18 +852,19 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
 
   // Normalize and deduplicate collected emails (manual + role-based).
   $emails = array_unique(array_filter(array_map('trim', $emails)));
-  $emails = array_map('strtolower', $emails);
 
   foreach ($emails as $email) {
     if (valid_email_address($email)) {
       $subscriber = simplenews_subscriber_load_by_mail($email);
       $unsubscribed_tids = array();
       if ($checked_categories) {
-        $unsubscribed_tids = db_query('SELECT tid FROM {simplenews_subscriptions} WHERE mail = :mail AND tid IN (:tids[]) AND status = :status', array(
-          ':mail' => $email,
-          ':tids' => $checked_categories,
-          ':status' => SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED,
-        ))->fetchCol();
+        $subscription_query = db_select('simplenews_subscription', 'ss');
+        $subscription_query->join('simplenews_subscriber', 'sb', 'ss.snid = sb.snid');
+        $subscription_query->fields('ss', array('tid'));
+        $subscription_query->condition('sb.mail', $email);
+        $subscription_query->condition('ss.tid', $checked_categories, 'IN');
+        $subscription_query->condition('ss.status', SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
+        $unsubscribed_tids = $subscription_query->execute()->fetchCol();
       }
       foreach (simplenews_categories_load_multiple($checked_categories) as $category) {
         // If there is a valid subscriber, check if there is a subscription for
