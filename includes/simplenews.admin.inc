@@ -884,11 +884,13 @@ function simplenews_subscription_list_add_submit($form, &$form_state) {
         $unsubscribed_tids = $subscription_query->execute()->fetchCol();
       }
       foreach (simplenews_categories_load_multiple($checked_categories) as $category) {
+        $subscriptions = (isset($subscriber->newsletter_subscription) && is_array($subscriber->newsletter_subscription)) ? $subscriber->newsletter_subscription : array();
+
         // If there is a valid subscriber, check if there is a subscription for
         // the current category and if this subscription has the status
         // unsubscribed.
-        $is_unsubscribed = (in_array($category->tid, $unsubscribed_tids, TRUE)) || ($subscriber && array_key_exists($category->tid, $subscriber->newsletter_subscription)
-          && $subscriber->newsletter_subscription[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
+        $is_unsubscribed = (in_array($category->tid, $unsubscribed_tids, TRUE)) || ($subscriber && array_key_exists($category->tid, $subscriptions)
+          && $subscriptions[$category->tid]->status == SIMPLENEWS_SUBSCRIPTION_STATUS_UNSUBSCRIBED);
         if (!$is_unsubscribed || $form_state['values']['resubscribe'] == TRUE) {
           if (simplenews_subscribe_user($email, $category->tid, FALSE, 'mass subscribe', $langcode, $form_state['values']['resubscribe'])) {
             $added[] = $email;
