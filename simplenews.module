@@ -923,6 +923,9 @@ function simplenews_unsubscribe_blocked_accounts(array $uids = array()) {
     ->fields('ss', array('snid'));
   $query->join('users', 'u', 'u.uid = ss.uid');
   $query->condition('u.status', 0);
+  // Ignore the anonymous/global user (uid 0) so anonymous subscribers are not
+  // auto-unsubscribed on cron runs.
+  $query->condition('u.uid', 0, '<>');
   if ($uids) {
     $query->condition('u.uid', $uids, 'IN');
   }
