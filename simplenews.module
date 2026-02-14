@@ -71,6 +71,15 @@ define('SIMPLENEWS_OPT_INOUT_DOUBLE', 'double');
 define('SIMPLENEWS_UNLIMITED', -1);
 
 /**
+ * Implements hook_init().
+ */
+function simplenews_init() {
+  if (module_exists('honeypot') && path_is_admin(current_path())) {
+    backdrop_set_message(t('SimpleNews is not fully compatible with the Honeypot module. Unexpected behavior may occur.'), 'warning');
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function simplenews_permission() {
