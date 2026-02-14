@@ -149,7 +149,7 @@ function simplenews_admin_issues() {
       'field' => 'n.title',
     ),
     'category' => array(
-      'data' => t('Newsletter category'),
+      'data' => t('Newsletter'),
       'field' => 'sc.name',
     ),
     'created' => array(
@@ -404,7 +404,7 @@ function theme_simplenews_admin_categories($variables) {
     }
   }
 
-  $header = array(t('Newsletter category'));
+  $header = array(t('Newsletter'));
   $header[] = t('Subscribers');
   $header[] = t('Opt In/Out status');
   $header[] = t('Operations');
@@ -795,6 +795,7 @@ function simplenews_newsletter_change_status($category, $action) {
         $success = $query->execute();
       }
       break;
+
     case 'enable':
       if ($disabled) {
         $query = db_update('simplenews_category');
