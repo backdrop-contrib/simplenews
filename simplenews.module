@@ -392,35 +392,15 @@ function simplenews_node_validate($node, $form) {
   // Check if a taxonomy term field is present in the node.
   $field = simplenews_get_category_field($node->type);
   if (!$field) {
-    form_set_error('', t('No newsletter category field is configured. Check ... @todo'));
+    form_set_error('', t('No newsletter category field is configured.'));
   }
   else {
     // Check if a newsletter category term is selected.
     $terms = simplenews_get_term_values($node);
     if (!$terms) {
       form_set_error($field['field_name'], t('A newsletter category term is required.'));
-      watchdog('simplenews', '@todo ... newsletter taxonomy is required, change settings.', array(), WATCHDOG_ERROR);
+      watchdog('simplenews', 'Newsletter taxonomy term is required for %title.', array('%title' => $node->title), WATCHDOG_ERROR);
     }
-    elseif (count($terms) > 1) {
-      form_set_error($field['field_name'], t('Only one newsletter category term is allowed.'));
-      watchdog('simplenews', '@todo ... newsletter taxonomy must be single value, change settings.', array(), WATCHDOG_ERROR);
-    }
-  }
-}
-
-/**
- * Implements hook_node_presave().
- */
-function simplenews_node_presave($node) {
-  if (!simplenews_check_node_types($node->type)) {
-    return;
-  }
-
-  if (!empty($node->nid) && !isset($node->simplenews)) {
-    $node->simplenews = simplenews_newsletter_load($node->nid);
-  }
-  if (empty($node->simplenews)) {
-    $newsletter = (object) simplenews_newsletter_defaults($node);
   }
 }
 
@@ -879,33 +859,56 @@ function _simplenews_node_form(&$form, $form_state) {
  * Implements hook_field_attach_form().
  */
 function simplenews_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
-  if ($entity_type == 'node') {
-    if (simplenews_check_node_types(array($entity->type))) {
-      $config = config('simplenews.settings');
-      $field = $config->get('simplenews_category_field');
-      if (isset($form[$field])) {
-        // Remove all disabled options.
-        foreach ($form[$field][LANGUAGE_NONE]['#options'] as $key => $label) {
-          if (is_numeric($key)) {
-            $query = "SELECT disabled FROM {simplenews_category} WHERE tid = :key";
-            $disabled = db_query($query, array(':key' => $key))->fetchfield();
-            if ($disabled) {
-              // If the selected newsletter is disabled, prevent it from being changed.
-              if (!empty($form[$field][LANGUAGE_NONE]['#default_value']) &&
-                 ($key == $form[$field][LANGUAGE_NONE]['#default_value'][0])) {
-                  $form[$field]['#disabled'] = TRUE;
-              }
-              else {
-                // Otherwise, remove the option from the list.
-                unset($form[$field][LANGUAGE_NONE]['#options'][$key]);
-              }
-            }
-          }
+  if ($entity_type !== 'node') {
+    return;
+  }
+
+  // Work for any content type that has the configured newsletter field.
+  $field_info = simplenews_get_category_field($entity->type);
+  $field_name = isset($field_info['field_name']) ? $field_info['field_name'] : config_get('simplenews.settings', 'category_field');
+
+  if ($field_name && isset($form[$field_name])) {
+    _simplenews_prune_disabled_newsletters($form[$field_name], $langcode);
+  }
+}
+
+/**
+ * Remove disabled newsletter taxonomy terms from a field widget.
+ */
+function _simplenews_prune_disabled_newsletters(array &$field_element, $langcode) {
+  // Collect potential language buckets.
+  $candidate_keys = array(LANGUAGE_NONE, $langcode, $field_element['#language'] ?? NULL);
+  foreach (array_keys($field_element) as $candidate) {
+    if (is_array($field_element[$candidate] ?? NULL) && $candidate[0] !== '#') {
+      $candidate_keys[] = $candidate;
+    }
+  }
+  $candidate_keys = array_values(array_unique(array_filter($candidate_keys)));
+
+  foreach ($candidate_keys as $bucket) {
+    if (!isset($field_element[$bucket]['#options']) || !is_array($field_element[$bucket]['#options'])) {
+      continue;
+    }
+
+    foreach ($field_element[$bucket]['#options'] as $key => $label) {
+      if (!is_numeric($key)) {
+        continue;
+      }
+
+      $disabled = db_query("SELECT disabled FROM {simplenews_category} WHERE tid = :key", array(':key' => $key))->fetchfield();
+      if ($disabled) {
+        unset($field_element[$bucket]['#options'][$key]);
+
+        $default_val = $field_element[$bucket]['#default_value'] ?? array();
+        if (!is_array($default_val)) {
+          $default_val = array($default_val);
+        }
+        if (!empty($default_val) && in_array($key, $default_val, TRUE)) {
+          $field_element[$bucket]['#default_value'] = array();
         }
       }
     }
   }
-
 }
 
 /**
@@ -2804,20 +2807,13 @@ function simplenews_node_access($node, $op, $account) {
     if ($result->rowCount()) {
       $status = $result->fetch();
       if ($status->status == SIMPLENEWS_STATUS_SEND_PENDING) {
-        backdrop_set_message(t('You can\'t delete this newsletter because it has not been sent to all its subscribers.'), 'warning');
         return NODE_ACCESS_DENY;
       }
     }
   }
+
   return NODE_ACCESS_IGNORE;
 }
-
-/**
- * Implements hook_cronapi().
- *
- * As initiated by elysia_cron.
- * https://backdropcms.org/project/elysia_cron
- * */
 function simplenews_cronapi($op) {
 
   switch ($op) {
