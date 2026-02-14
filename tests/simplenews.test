@@ -208,3 +208,89 @@ class SimplenewsSubscriptionHistoryTestCase extends BackdropWebTestCase {
   }
 
 }
+
+class SimplenewsDisabledCategoryPruneTestCase extends BackdropWebTestCase {
+
+  // Use testing profile for fast installs.
+  protected $profile = 'testing';
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Disabled category pruning',
+      'description' => 'Ensures disabled newsletters are removed from node edit forms.',
+      'group' => 'SimplenewsPrune',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp(array('taxonomy', 'simplenews'));
+  }
+
+  /**
+   * Disabled newsletter taxonomy terms should not appear on node forms.
+   */
+  public function testDisabledNewsletterHiddenOnNodeForm() {
+    // Create an editor who can author Simplenews content.
+    $editor = $this->backdropCreateUser(array(
+      'create simplenews content',
+      'edit own simplenews content',
+      'access content',
+    ));
+    $this->backdropLogin($editor);
+
+    $vocabulary = taxonomy_vocabulary_load('newsletter');
+    $this->assertTrue(!empty($vocabulary), t('Newsletter vocabulary exists.'));
+
+    // Create two newsletter terms and corresponding Simplenews category rows.
+    $enabled_term = entity_create('taxonomy_term', array(
+      'vocabulary' => $vocabulary->machine_name,
+      'name' => $this->randomName(),
+    ));
+    taxonomy_term_save($enabled_term);
+    $this->saveCategoryRecord($enabled_term->tid, 0);
+
+    $disabled_term = entity_create('taxonomy_term', array(
+      'vocabulary' => $vocabulary->machine_name,
+      'name' => $this->randomName(),
+    ));
+    taxonomy_term_save($disabled_term);
+    $this->saveCategoryRecord($disabled_term->tid, 1);
+
+    // Visit the node add form and assert the disabled term is not shown.
+    $this->backdropGet('node/add/simplenews');
+    $this->assertResponse(200);
+
+    $enabled_option = $this->xpath('//input[@type="radio" and contains(@name, "field_simplenews_term") and @value=:tid]', array(':tid' => $enabled_term->tid));
+    $this->assertTrue(!empty($enabled_option), t('Enabled newsletter option present.'));
+
+    $disabled_option = $this->xpath('//input[@type="radio" and contains(@name, "field_simplenews_term") and @value=:tid]', array(':tid' => $disabled_term->tid));
+    $this->assertTrue(empty($disabled_option), t('Disabled newsletter option removed from form.'));
+  }
+
+  /**
+   * Persist a Simplenews category row with sensible defaults.
+   */
+  protected function saveCategoryRecord($tid, $disabled) {
+    $category = new stdClass();
+    $category->tid = $tid;
+    $category->from_name = config_get('system.core', 'site_name');
+    $category->email_subject = '[[simplenews-category:name]] [node:title]';
+    $category->from_address = config_get('system.core', 'site_mail');
+    $category->format = 'plain';
+    $category->priority = SIMPLENEWS_PRIORITY_NONE;
+    $category->receipt = 0;
+    $category->hyperlinks = 1;
+    $category->new_account = 'none';
+    $category->opt_inout = 'double';
+    $category->block = 0;
+    $category->disabled = $disabled;
+    simplenews_category_save($category);
+  }
+
+}

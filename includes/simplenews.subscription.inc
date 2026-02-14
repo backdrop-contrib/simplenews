@@ -812,9 +812,28 @@ function simplenews_confirm_removal_form($form, &$form_state, $mail, $newsletter
     '#weight' => 0,
   );
   if (!empty($newsletter->description)) {
-    $format = !empty($newsletter->format) ? $newsletter->format : filter_default_format();
+    // Use the taxonomy term's text format (not the email format) and fall back safely
+    // to avoid "Missing text format" errors on confirm pages.
+    $format = filter_default_format();
+    if (!empty($newsletter->tid)) {
+      if ($term = taxonomy_term_load($newsletter->tid)) {
+        if (!empty($term->format)) {
+          $format = $term->format;
+        }
+      }
+    }
+    $format_info = filter_format_load($format);
+    if (!$format_info) {
+      $fallback_format = function_exists('filter_fallback_format') ? filter_fallback_format() : filter_default_format();
+      $format_info = filter_format_load($fallback_format);
+      $format = $format_info ? $fallback_format : NULL;
+    }
+
     $raw_description = _simplenews_newsletter_description($newsletter);
-    $rendered_description = check_markup($raw_description, $format);
+    $rendered_description = '';
+    if ($format) {
+      $rendered_description = check_markup($raw_description, $format);
+    }
     // Fallback to plain text if filtering strips everything (e.g., missing/invalid format).
     if ($rendered_description === '' && $raw_description !== '') {
       $rendered_description = check_plain($raw_description);

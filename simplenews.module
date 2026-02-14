@@ -877,38 +877,65 @@ function simplenews_field_attach_form($entity_type, $entity, &$form, &$form_stat
  */
 function _simplenews_prune_disabled_newsletters(array &$field_element, $langcode) {
   // Collect potential language buckets.
-  $candidate_keys = array(LANGUAGE_NONE, $langcode, $field_element['#language'] ?? NULL);
+  $candidate_keys = array(LANGUAGE_NONE, $langcode);
+  if (isset($field_element['#language'])) {
+    $candidate_keys[] = $field_element['#language'];
+  }
   foreach (array_keys($field_element) as $candidate) {
     if (is_array($field_element[$candidate] ?? NULL) && $candidate[0] !== '#') {
       $candidate_keys[] = $candidate;
     }
   }
-  $candidate_keys = array_values(array_unique(array_filter($candidate_keys)));
+  $candidate_keys = array_values(array_unique($candidate_keys));
 
+  // Collect all term IDs we need to check to avoid one query per option.
+  $term_ids = array();
+  foreach ($candidate_keys as $bucket) {
+    if (!isset($field_element[$bucket]['#options']) || !is_array($field_element[$bucket]['#options'])) {
+      continue;
+    }
+    foreach ($field_element[$bucket]['#options'] as $key => $label) {
+      if (is_numeric($key)) {
+        $term_ids[] = (int) $key;
+      }
+    }
+  }
+  $term_ids = array_values(array_unique($term_ids));
+
+  // Load disabled flags in a single query.
+  $disabled_categories = array();
+  if (!empty($term_ids)) {
+    $result = db_query('SELECT tid, disabled FROM {simplenews_category} WHERE tid IN (:tids)', array(':tids' => $term_ids));
+    foreach ($result as $record) {
+      if (!empty($record->disabled)) {
+        $disabled_categories[(int) $record->tid] = TRUE;
+      }
+    }
+  }
+
+  // Apply pruning per bucket.
   foreach ($candidate_keys as $bucket) {
     if (!isset($field_element[$bucket]['#options']) || !is_array($field_element[$bucket]['#options'])) {
       continue;
     }
 
     foreach ($field_element[$bucket]['#options'] as $key => $label) {
-      if (!is_numeric($key)) {
+      if (!is_numeric($key) || !isset($disabled_categories[(int) $key])) {
         continue;
       }
 
-      $disabled = db_query("SELECT disabled FROM {simplenews_category} WHERE tid = :key", array(':key' => $key))->fetchfield();
-      if ($disabled) {
-        unset($field_element[$bucket]['#options'][$key]);
+      unset($field_element[$bucket]['#options'][$key]);
 
-        $default_val = $field_element[$bucket]['#default_value'] ?? array();
-        if (!is_array($default_val)) {
-          $default_val = array($default_val);
-        }
-        if (!empty($default_val) && in_array($key, $default_val, TRUE)) {
-          $field_element[$bucket]['#default_value'] = array();
-        }
+      $default_val = $field_element[$bucket]['#default_value'] ?? array();
+      if (!is_array($default_val)) {
+        $default_val = array($default_val);
+      }
+      if (!empty($default_val) && in_array((int) $key, $default_val, TRUE)) {
+        $field_element[$bucket]['#default_value'] = array();
       }
     }
   }
+
 }
 
 /**
@@ -2080,6 +2107,10 @@ function simplenews_categories_load_multiple($tids = array(), $conditions = arra
  * @ingroup newsletter
  */
 function simplenews_category_save($category) {
+  // Ensure required properties have sane defaults to avoid null inserts.
+  $category = (object) $category;
+  $category->disabled = isset($category->disabled) ? (int) $category->disabled : 0;
+
   db_merge('simplenews_category')
     ->key(array('tid' => $category->tid))
     ->fields(array(

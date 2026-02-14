@@ -16,3 +16,9 @@ description = Logs and renders subscription history for subscribers.
 group = SimplenewsHistory
 file = tests/simplenews.test
 
+[SimplenewsDisabledCategoryPruneTestCase]
+name = Simplenews disabled category pruning
+description = Disabled newsletter terms are removed from node forms.
+group = SimplenewsPrune
+file = tests/simplenews.test
+

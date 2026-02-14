@@ -783,14 +783,14 @@ function simplenews_newsletter_change_status($category, $action) {
   $success = FALSE;
   $query = "SELECT disabled FROM {simplenews_category} WHERE tid = :tid";
   $substitutions = array(':tid' => $category->tid);
-  $disabled = db_query($query, $substitutions)->fetchField();
+  $disabled = (int) db_query($query, $substitutions)->fetchField();
 
   // Attempt to change the status.
   switch ($action) {
     case 'disable':
       if (!$disabled) {
         $query = db_update('simplenews_category');
-        $query->fields(array('disabled' => TRUE));
+        $query->fields(array('disabled' => 1));
         $query->condition('tid', $category->tid);
         $success = $query->execute();
       }
@@ -799,7 +799,7 @@ function simplenews_newsletter_change_status($category, $action) {
     case 'enable':
       if ($disabled) {
         $query = db_update('simplenews_category');
-        $query->fields(array('disabled' => FALSE));
+        $query->fields(array('disabled' => 0));
         $query->condition('tid', $category->tid);
         $success = $query->execute();
       }
