@@ -339,7 +339,7 @@ function simplenews_admin_categories() {
         '#type' => 'dropbutton',
         '#links' => array(
           'edit' => array(
-            'title' => t('Edit category'),
+            'title' => t('Edit'),
             'href' => "admin/config/services/simplenews/categories/$tid/edit",
           ),
         ),

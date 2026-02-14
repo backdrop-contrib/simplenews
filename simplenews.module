@@ -156,7 +156,7 @@ function simplenews_menu() {
     'file' => 'includes/simplenews.admin.inc',
   );
   $items['admin/config/services/simplenews/add'] = array(
-    'title' => 'Add newsletter category',
+    'title' => 'Add newsletter',
     'type' => MENU_LOCAL_ACTION,
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_admin_category_form'),
