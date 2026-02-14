@@ -2,9 +2,9 @@
 
 /**
  * @file
- * Newsletter admin, subscription admin, SimpleNews settings.
+ * Newsletter admin, subscription admin, Simplenews settings.
  *
- * @ingroup SimpleNews
+ * @ingroup Simplenews
  */
 
 /**
@@ -367,7 +367,7 @@ function simplenews_admin_categories() {
 }
 
 /**
- * Form builder function, display a list of SimpleNews categories.
+ * Form builder function, display a list of Simplenews categories.
  *
  * @ingroup theming
  */
@@ -694,7 +694,7 @@ function simplenews_admin_category_form_submit($form, &$form_state) {
     $vocabulary = new TaxonomyVocabulary();
     $vocabulary->name = 'Newsletter';
     $vocabulary->machine_name = "newsletter";
-    $vocabulary->description = t('SimpleNews newsletter categories.');
+    $vocabulary->description = t('Simplenews newsletter categories.');
     $vocabulary->module = 'taxonomy';
     taxonomy_vocabulary_save($vocabulary);
   }
@@ -736,7 +736,7 @@ function simplenews_admin_category_form_submit($form, &$form_state) {
 function simplenews_admin_category_delete($form, &$form_state, $category) {
   $count = db_query('SELECT count(tid) as min_id FROM {simplenews_category}')->fetchField();
   if ($count == '1') {
-    backdrop_set_message(t('At least one newsletter must exist. If you want to delete all newsletters, disable the SimpleNews module instead.'), 'error');
+    backdrop_set_message(t('At least one newsletter must exist. If you want to delete all newsletters, disable the Simplenews module instead.'), 'error');
     backdrop_goto('admin/config/services/simplenews');
   }
 
@@ -760,7 +760,7 @@ function simplenews_admin_category_delete($form, &$form_state, $category) {
 }
 
 /**
- * Form submit callback for deleting a SimpleNews category.
+ * Form submit callback for deleting a Simplenews category.
  */
 function simplenews_admin_category_delete_submit($form, &$form_state) {
   $tid = $form_state['values']['tid'];
@@ -1517,7 +1517,7 @@ function simplenews_subscription_delete_multiple($snids = array()) {
 }
 
 /**
- * Menu callback: SimpleNews admin settings - Newsletter.
+ * Menu callback: Simplenews admin settings - Newsletter.
  */
 function simplenews_admin_settings_newsletter($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -1634,7 +1634,7 @@ function simplenews_admin_settings_newsletter_validate($form, &$form_state) {
 }
 
 /**
- * Menu callback: SimpleNews admin settings - Email.
+ * Menu callback: Simplenews admin settings - Email.
  */
 function simplenews_admin_settings_mail($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -1706,13 +1706,13 @@ function simplenews_admin_settings_mail($form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Log emails'),
     '#default_value' => $config->get('debug'),
-    '#description' => t('Logs outgoing SimpleNews emails at Debug severity. Logged means “handed to PHP mail()”, not delivered. Enable Debug severity at !logging to view entries.', array('!logging' => l(t('Configuration » Development » Logging and errors'), 'admin/config/development/logging'))),
+    '#description' => t('Logs outgoing Simplenews emails at Debug severity. Logged means “handed to PHP mail()”, not delivered. Enable Debug severity at !logging to view entries.', array('!logging' => l(t('Configuration » Development » Logging and errors'), 'admin/config/development/logging'))),
   );
   return system_settings_form($form);
 }
 
 /**
- * Menu callback: SimpleNews admin settings - Subscription.
+ * Menu callback: Simplenews admin settings - Subscription.
  */
 function simplenews_admin_settings_subscription($form, &$form_state) {
   $config = config('simplenews.settings');
@@ -2132,7 +2132,7 @@ function theme_simplenews_status($variables) {
 }
 
 /**
- * Theme SimpleNews issues and subscriptions filter form.
+ * Theme Simplenews issues and subscriptions filter form.
  *
  * @ingroup theming
  */
@@ -2147,7 +2147,7 @@ function theme_simplenews_filter_form($variables) {
 }
 
 /**
- * Theme SimpleNews subscriptions administration filter form.
+ * Theme Simplenews subscriptions administration filter form.
  *
  * @ingroup theming
  */
@@ -2163,7 +2163,7 @@ function theme_simplenews_subscription_filter_form($variables) {
 }
 
 /**
- * Function to provide the various SimpleNews mail priorities for newsletter categories.
+ * Function to provide the various Simplenews mail priorities for newsletter categories.
  */
 function simplenews_get_priority() {
   return array(
@@ -2210,7 +2210,7 @@ function simplenews_node_tab_send_form($form, &$form_state, $node) {
     backdrop_goto('/node/' . $node->nid . '/edit');
   }
 
-  // First check if there already is a loaded SimpleNews object.
+  // First check if there already is a loaded Simplenews object.
   if (!empty($node->simplenews)) {
     $simplenews_values = $node->simplenews;
   }

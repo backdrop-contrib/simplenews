@@ -6,9 +6,9 @@
  */
 
 /**
- * @mainpage SimpleNews API documentation.
+ * @mainpage Simplenews API documentation.
  *
- * SimpleNews builds on the following basic concepts.
+ * Simplenews builds on the following basic concepts.
  *
  * @link subscriber Subscribers @endlink subscribe to @link newsletter
  * newsletters (categories) @endlink. That connection is called

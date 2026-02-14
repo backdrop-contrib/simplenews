@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Drush commands for administer SimpleNews.
+ * Drush commands for administer Simplenews.
  */
 
 /**
@@ -12,7 +12,7 @@ function simplenews_drush_command() {
   $items = array();
 
   $items['simplenews-spool-count'] = array(
-    'description' => 'Print the current SimpleNews mail spool count',
+    'description' => 'Print the current Simplenews mail spool count',
     'aliases' => array('sn-sc'),
     'backdrop dependencies' => array('simplenews'),
     'options' => array(
@@ -49,7 +49,7 @@ function drush_simplenews_spool_count() {
     drush_print_pipe($count);
   }
   else {
-    drush_log(dt('Current SimpleNews mail spool count: @count', array('@count' => $count)), 'status');
+    drush_log(dt('Current Simplenews mail spool count: @count', array('@count' => $count)), 'status');
   }
 }
 
@@ -84,7 +84,7 @@ function drush_simplenews_spool_send($limit = FALSE) {
     }
     else {
       drush_log(dt('Sent @count mails from the queue in @sec seconds.', array('@count' => $sent, '@sec' => $durance)), 'status');
-      drush_log(dt('Remaining SimpleNews mail spool count: @count', array('@count' => $remaining)), 'status');
+      drush_log(dt('Remaining Simplenews mail spool count: @count', array('@count' => $remaining)), 'status');
     }
   }
 

@@ -101,7 +101,7 @@ function simplenews_schema() {
   );
 
   $schema['simplenews_newsletter'] = array(
-    'description' => 'SimpleNews newsletter data.',
+    'description' => 'Simplenews newsletter data.',
     'fields' => array(
       'nid' => array(
         'description' => '{node} that is used as newsletter.',
@@ -510,7 +510,7 @@ function simplenews_uninstall() {
   db_delete('simplenews_subscription_log');
   db_delete('simplenews_subscriber');
 
-  // Remove SimpleNews configuration file.
+  // Remove Simplenews configuration file.
   $config = config('simplenews.settings');
   $config->delete();
 }
@@ -641,7 +641,7 @@ function simplenews_update_1005() {
 }
 
 /**
- * Create SimpleNews node type.
+ * Create Simplenews node type.
  */
 function _simplenews_install_nodetype() {
   // Create a newsletter type if needed.
@@ -649,7 +649,7 @@ function _simplenews_install_nodetype() {
   if (!$type) {
     $type = node_type_set_defaults(array(
       'type' => 'simplenews',
-      'name' => t('SimpleNews newsletter'),
+      'name' => t('Simplenews newsletter'),
       'base' => 'node_content',
       'description' => t('A newsletter issue to be sent to subscribed email addresses.'),
       'locked' => 0,
@@ -666,17 +666,17 @@ function _simplenews_install_nodetype() {
 }
 
 /**
- * Create SimpleNews vocabulary and initial term.
+ * Create Simplenews vocabulary and initial term.
  */
 function _simplenews_init_simplenews_vocabulary() {
   $config = config('simplenews.settings');
-  // Create the SimpleNews vocabulary. If it exists, set machine_name variable.
+  // Create the Simplenews vocabulary. If it exists, set machine_name variable.
   $vocabularies = taxonomy_vocabulary_load_multiple(array(), array('machine_name' => 'newsletter'));
   $vocabulary = reset($vocabularies);
   if (!$vocabulary) {
     $vocabulary = new TaxonomyVocabulary(array(
       'name' => t('Newsletter'),
-      'description' => t('SimpleNews newsletter categories.'),
+      'description' => t('Simplenews newsletter categories.'),
       'machine_name' => 'newsletter',
       'help' => '',
       'nodes' => array('simplenews' => 'simplenews'),
@@ -699,7 +699,7 @@ function _simplenews_init_simplenews_vocabulary() {
 }
 
 /**
- * Create initial SimpleNews categories.
+ * Create initial Simplenews categories.
  */
 function _simplenews_init_simplenews_category() {
   $config = config('simplenews.settings');

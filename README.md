@@ -1,6 +1,6 @@
 
-Simplenews for Backdrop
-=======================
+Simplenews
+==========
 
 Send newsletters to subscribers, with opt-in/out controls and per-newsletter categories. Supports HTML mail via the [Mimemail module](https://github.com/backdrop-contrib/mimemail).
 
@@ -22,7 +22,7 @@ Configuration
 
 - Settings: Configuration → Web services → Newsletter → Settings (`/admin/config/services/simplenews/settings`).
 - Newsletters: Configuration → Web services → Newsletter (`/admin/config/services/simplenews`).
-- Content types: Any type can be marked “Use as SimpleNews newsletter” under Publishing settings; a Simplenews newsletter type is provided by default.
+- Content types: Any type can be marked “Use as Simplenews newsletter” under Publishing settings; a Simplenews newsletter type is provided by default.
 - Blocks: Place subscription blocks via Structure → Layouts → Add block → “Newsletter: …”.
 
 Sending

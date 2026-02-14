@@ -1,5 +1,5 @@
-name = SimpleNews rules
-description = Provides integration with Rules module for SimpleNews.
+name = Simplenews rules
+description = Provides integration with Rules module for Simplenews.
 dependencies[] = simplenews
 dependencies[] = rules
 package = Mail

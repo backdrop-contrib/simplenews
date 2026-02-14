@@ -1,4 +1,4 @@
-name = SimpleNews
+name = Simplenews
 description = Send newsletters to subscribed email addresses.
 package = Mail
 backdrop = 1.x

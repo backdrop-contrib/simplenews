@@ -15,7 +15,7 @@ function simplenews_rules_rules_action_info() {
   return array(
     'simplenews_rules_action_send' => array(
       'label' => t('Send newsletter'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'parameter' => array(
         'node' => array(
           'type' => 'node',
@@ -26,7 +26,7 @@ function simplenews_rules_rules_action_info() {
     ),
     'simplenews_rules_action_subscribe' => array(
       'label' => t('Subscribe an e-mail address to a newsletter'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'named parameter' => TRUE,
       'parameter' => array(
         'mail' => array(
@@ -36,7 +36,7 @@ function simplenews_rules_rules_action_info() {
         ),
         'tid' => array(
           'type' => 'integer',
-          'label' => t('SimpleNews category'),
+          'label' => t('Simplenews category'),
           'description' => t('For which newsletter category the subscription should happen.'),
           'options list' => 'simplenews_category_list',
         ),
@@ -65,7 +65,7 @@ function simplenews_rules_rules_action_info() {
     ),
     'simplenews_rules_action_unsubscribe' => array(
       'label' => t('Unsubscribe an e-mail address from a newsletter'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'named parameter' => TRUE,
       'parameter' => array(
         'mail' => array(
@@ -75,7 +75,7 @@ function simplenews_rules_rules_action_info() {
         ),
         'tid' => array(
           'type' => 'integer',
-          'label' => t('SimpleNews category'),
+          'label' => t('Simplenews category'),
           'description' => t('For which newsletter category the unsubscription should happen.'),
           'options list' => 'simplenews_category_list',
         ),
@@ -105,7 +105,7 @@ function simplenews_rules_rules_action_info() {
     ),
     'simplenews_rules_action_subscription_delete' => array(
       'label' => t('Delete an e-mail address from a newsletter'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'named parameter' => TRUE,
       'parameter' => array(
         'mail' => array(
@@ -115,7 +115,7 @@ function simplenews_rules_rules_action_info() {
         ),
         'tid' => array(
           'type' => 'integer',
-          'label' => t('SimpleNews category'),
+          'label' => t('Simplenews category'),
           'description' => t('For which newsletter category the delete should happen.'),
           'options list' => 'simplenews_category_list',
         ),
@@ -123,7 +123,7 @@ function simplenews_rules_rules_action_info() {
     ),
     'simplenews_rules_action_subscriber_delete' => array(
       'label' => t('Delete an e-mail address from all newsletters'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'named parameter' => TRUE,
       'parameter' => array(
         'mail' => array(
@@ -143,7 +143,7 @@ function simplenews_rules_rules_event_info() {
   return array(
     'simplenews_rules_event_subscribe' => array(
       'label' => t('A user has been subscribed'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'variables' => array(
         'mail' => array(
           'type' => 'text',
@@ -152,7 +152,7 @@ function simplenews_rules_rules_event_info() {
         ),
         'tid' => array(
           'type' => 'integer',
-          'label' => t('SimpleNews category'),
+          'label' => t('Simplenews category'),
           'description' => t('The newsletter category of the subscription.'),
           'options list' => 'simplenews_category_list',
         ),
@@ -160,7 +160,7 @@ function simplenews_rules_rules_event_info() {
     ),
     'simplenews_rules_event_unsubscribe' => array(
       'label' => t('A user has been unsubscribed'),
-      'group' => t('SimpleNews'),
+      'group' => t('Simplenews'),
       'variables' => array(
         'mail' => array(
           'type' => 'text',
@@ -169,7 +169,7 @@ function simplenews_rules_rules_event_info() {
         ),
         'tid' => array(
           'type' => 'integer',
-          'label' => t('SimpleNews category'),
+          'label' => t('Simplenews category'),
           'description' => t('The newsletter category of the subscription.'),
           'options list' => 'simplenews_category_list',
         ),
@@ -190,7 +190,7 @@ function simplenews_rules_action_send($node) {
 }
 
 /**
- * Action Implementation: Subscribe an e-mail address to a SimpleNews newsletter.
+ * Action Implementation: Subscribe an e-mail address to a Simplenews newsletter.
  */
 function simplenews_rules_action_subscribe($args, $settings) {
   if ($args['language'] == LANGUAGE_NONE) {
@@ -204,7 +204,7 @@ function simplenews_rules_action_subscribe($args, $settings) {
 }
 
 /**
- * Action Implementation: Unsubscribe an e-mail address to a SimpleNews newsletter.
+ * Action Implementation: Unsubscribe an e-mail address to a Simplenews newsletter.
  */
 function simplenews_rules_action_unsubscribe($args, $settings) {
   if ($args['language'] == LANGUAGE_NONE) {
@@ -218,7 +218,7 @@ function simplenews_rules_action_unsubscribe($args, $settings) {
 }
 
 /**
- * Action Implementation: Delete an email address from a specific SimpleNews newsletter
+ * Action Implementation: Delete an email address from a specific Simplenews newsletter
  */
 function simplenews_rules_action_subscription_delete($args, $settings) {
   if (!empty($args['mail']) && !empty($args['tid'])) {
@@ -227,7 +227,7 @@ function simplenews_rules_action_subscription_delete($args, $settings) {
 }
 
 /**
- * Action Implementation: Delete an email address from all SimpleNews newsletters
+ * Action Implementation: Delete an email address from all Simplenews newsletters
  */
 function simplenews_rules_action_subscriber_delete($args, $settings) {
   $subscriber = simplenews_subscriber_load_by_mail($args['mail']);

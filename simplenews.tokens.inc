@@ -10,12 +10,12 @@
  */
 function simplenews_token_info() {
   $types['simplenews-subscriber'] = array(
-    'name' => t('SimpleNews subscriber'),
+    'name' => t('Simplenews subscriber'),
     'description' => t('Tokens related to the newsletter recipient'),
     'needs-data' => 'simplenews_subscriber',
   );
   $types['simplenews-category'] = array(
-    'name' => t('SimpleNews newsletter category'),
+    'name' => t('Simplenews newsletter category'),
     'description' => t('Tokens related to the newsletter category'),
     'needs-data' => 'category',
   );
