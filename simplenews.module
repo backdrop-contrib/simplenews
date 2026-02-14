@@ -128,7 +128,7 @@ function simplenews_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/config/services/simplenews/categories/%simplenews_category/edit'] = array(
-    'title' => 'Edit Newsletters',
+    'title' => 'Edit Newsletter',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_admin_category_form', 5),
     'access arguments' => array('administer newsletters'),
