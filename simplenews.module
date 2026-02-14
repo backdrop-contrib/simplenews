@@ -119,16 +119,30 @@ function simplenews_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/config/services/simplenews/categories/%simplenews_category/edit'] = array(
-    'title' => 'Newsletters',
+    'title' => 'Edit Newsletters',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_admin_category_form', 5),
     'access arguments' => array('administer newsletters'),
     'file' => 'includes/simplenews.admin.inc',
   );
   $items['admin/config/services/simplenews/categories/%simplenews_category/delete'] = array(
-    'title' => 'Newsletters',
+    'title' => 'Delete Newsletters',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('simplenews_admin_category_delete', 5),
+    'access arguments' => array('administer newsletters'),
+    'file' => 'includes/simplenews.admin.inc',
+  );
+  $items['admin/config/services/simplenews/categories/%simplenews_category/enable'] = array(
+    'title' => 'Enable Newsletters',
+    'page callback' => 'simplenews_newsletter_change_status',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('administer newsletters'),
+    'file' => 'includes/simplenews.admin.inc',
+  );
+  $items['admin/config/services/simplenews/categories/%simplenews_category/disable'] = array(
+    'title' => 'Disable Newsletters',
+    'page callback' => 'simplenews_newsletter_change_status',
+    'page arguments' => array(5, 6),
     'access arguments' => array('administer newsletters'),
     'file' => 'includes/simplenews.admin.inc',
   );
@@ -837,7 +851,6 @@ function simplenews_form_alter(&$form, &$form_state, $form_id) {
  * @todo
  */
 function _simplenews_node_form(&$form, $form_state) {
-
   // Display warning if the node is currently being sent.
   if (!empty($form['#node']->nid)) {
     $newsletter = simplenews_newsletter_load($form['#node']->nid);
@@ -860,6 +873,39 @@ function _simplenews_node_form(&$form, $form_state) {
       '#token_types' => array('simplenews-category', 'simplenews-subscriber', 'node'),
     );
   }
+}
+
+/**
+ * Implements hook_field_attach_form().
+ */
+function simplenews_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  if ($entity_type == 'node') {
+    if (simplenews_check_node_types(array($entity->type))) {
+      $config = config('simplenews.settings');
+      $field = $config->get('simplenews_category_field');
+      if (isset($form[$field])) {
+        // Remove all disabled options.
+        foreach ($form[$field][LANGUAGE_NONE]['#options'] as $key => $label) {
+          if (is_numeric($key)) {
+            $query = "SELECT disabled FROM {simplenews_category} WHERE tid = :key";
+            $disabled = db_query($query, array(':key' => $key))->fetchfield();
+            if ($disabled) {
+              // If the selected newsletter is disabled, prevent it from being changed.
+              if (!empty($form[$field][LANGUAGE_NONE]['#default_value']) &&
+                 ($key == $form[$field][LANGUAGE_NONE]['#default_value'][0])) {
+                  $form[$field]['#disabled'] = TRUE;
+              }
+              else {
+                // Otherwise, remove the option from the list.
+                unset($form[$field][LANGUAGE_NONE]['#options'][$key]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
 
 /**
@@ -2045,6 +2091,7 @@ function simplenews_category_save($category) {
       'new_account' => $category->new_account,
       'opt_inout' => $category->opt_inout,
       'block' => $category->block,
+      'disabled' => $category->disabled,
     ))
     ->execute();
   module_invoke_all('simplenews_category_update', $category);

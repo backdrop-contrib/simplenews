@@ -321,29 +321,44 @@ function simplenews_build_issue_filter_query(SelectQueryInterface $query) {
  *
  * @ingroup forms
  * @see simplenews_admin_newsletter_categories_submit()
- * @see theme_simplenews_admin_newsletter_categories()
+ * @see theme_simplenews_admin_categories()
  */
 function simplenews_admin_categories() {
   $form['#tree'] = TRUE;
+
   if ($categories = simplenews_categories_load_multiple(array(), array('show_all' => TRUE))) {
     foreach ($categories as $category) {
-      $form[$category->tid]['#category'] = $category;
-      $form[$category->tid]['name'] = array('#markup' => check_plain(_simplenews_newsletter_name($category)));
-      $form[$category->tid]['count'] = array('#markup' => simplenews_count_subscriptions($category->tid));
-      $form[$category->tid]['optinout'] = array('#markup' => ucfirst($category->opt_inout));
+      $tid = $category->tid;
+      $form[$tid]['#category'] = $category;
+      $form[$tid]['#disabled'] = $category->disabled;
+      $form[$tid]['name'] = array('#markup' => check_plain(_simplenews_newsletter_name($category)));
+      $form[$tid]['count'] = array('#markup' => simplenews_count_subscriptions($tid));
+      $form[$tid]['optinout'] = array('#markup' => ucfirst($category->opt_inout));
 
-      $form[$category->tid]['edit'] = array(
+      $form[$tid]['edit'] = array(
         '#type' => 'dropbutton',
         '#links' => array(
           'edit' => array(
             'title' => t('Edit category'),
-            'href' => "admin/config/services/simplenews/categories/$category->tid/edit",
-          ),
-          'delete' => array(
-            'title' => t('Delete'),
-            'href' => "admin/config/services/simplenews/categories/$category->tid/delete",
+            'href' => "admin/config/services/simplenews/categories/$tid/edit",
           ),
         ),
+      );
+      if ($category->disabled) {
+        $form[$tid]['edit']['#links']['enable'] = array(
+          'title' => t('Enable'),
+          'href' => "admin/config/services/simplenews/categories/$tid/enable",
+        );
+      }
+      else {
+        $form[$tid]['edit']['#links']['disable'] = array(
+          'title' => t('Disable'),
+          'href' => "admin/config/services/simplenews/categories/$tid/disable",
+        );
+      }
+      $form[$tid]['edit']['#links']['delete'] = array(
+        'title' => t('Delete'),
+        'href' => "admin/config/services/simplenews/categories/$tid/delete",
       );
     }
   }
@@ -359,8 +374,8 @@ function simplenews_admin_categories() {
 function theme_simplenews_admin_categories($variables) {
   $form = $variables['form'];
 
-  $rows = array();
-
+  $enabled_rows = array();
+  $disabled_rows = array();
   foreach (element_children($form) as $key) {
     if (isset($form[$key]['name'])) {
       $category = &$form[$key];
@@ -374,25 +389,50 @@ function theme_simplenews_admin_categories($variables) {
         $row[] = backdrop_render($category['weight']);
       }
       $row[] = backdrop_render($category['edit']);
-      $rows[] = array(
-        'data' => $row,
-      );
+
+      if ($category['#disabled']) {
+        $disabled_rows[] = array(
+          'data' => $row,
+          'class' => array('disabled'),
+        );
+      }
+      else {
+        $enabled_rows[] = array(
+          'data' => $row,
+        );
+      }
     }
   }
 
-  $header = array(t('Newsletter category name'));
+  $header = array(t('Newsletter category'));
   $header[] = t('Subscribers');
   $header[] = t('Opt In/Out status');
+  $header[] = t('Operations');
   if (isset($form['submit'])) {
     $header[] = t('Weight');
     backdrop_add_tabledrag('newsletter-category', 'order', 'self', 'simplenews-category-weight');
   }
-  $header[] = array(
-    'data' => t('Operations'),
-    'colspan' => '3',
+
+  $empty_text = t('No newsletter categories. <a href="@link">Add category</a>.', array('@link' => url('admin/config/services/simplenews/add')));
+
+  $enabled_table = array(
+    'header' => $header,
+    'rows' => $enabled_rows,
+    'empty' => $empty_text,
+    'attributes' => array('id' => 'newsletter-category'),
+  );
+  $disabled_table = array(
+    'header' => $header,
+    'rows' => $disabled_rows,
+    'attributes' => array('id' => 'newsletter-category'),
   );
 
-  return theme('table', array('header' => $header, 'rows' => $rows, 'empty' => t('No newsletter categories. <a href="@link">Add category</a>.', array('@link' => url('admin/config/services/simplenews/add'))), 'attributes' => array('id' => 'newsletter-category'))) . backdrop_render_children($form);
+  $output  = theme('table', $enabled_table);
+  $output .= '<h2>' . t('Disabled Newsletters') . '</h2>';
+  $output .= theme('table', $disabled_table);
+  $output .= backdrop_render_children($form);
+
+  return $output;
 }
 
 /**
@@ -416,6 +456,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'new_account' => 'none',
     'opt_inout' => 'double',
     'block' => 1,
+    'disabled' => 0,
     'format' => $config->get('format'),
     'priority' => $config->get('priority'),
     'receipt' => $config->get('receipt'),
@@ -492,6 +533,12 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#title' => t('Subscription block'),
     '#default_value' => $edit['block'],
     '#description' => t('A subscription block will be provided for this newsletter category. Anonymous and authenticated users can subscribe and unsubscribe using this block.'),
+  );
+
+  // Add disabled state.
+  $form['subscription']['disabled'] = array(
+    '#type' => 'value',
+    '#value' => $edit['disabled'],
   );
 
   $form['email'] = array(
@@ -726,6 +773,54 @@ function simplenews_admin_category_delete_submit($form, &$form_state) {
 
   $form_state['redirect'] = 'admin/config/services/simplenews';
   return;
+}
+
+/**
+ * Menu callback: Enable / Disable newsletter category.
+ */
+function simplenews_newsletter_change_status($category, $action) {
+  // Get the current status.
+  $success = FALSE;
+  $query = "SELECT disabled FROM {simplenews_category} WHERE tid = :tid";
+  $substitutions = array(':tid' => $category->tid);
+  $disabled = db_query($query, $substitutions)->fetchField();
+
+  // Attempt to change the status.
+  switch ($action) {
+    case 'disable':
+      if (!$disabled) {
+        $query = db_update('simplenews_category');
+        $query->fields(array('disabled' => TRUE));
+        $query->condition('tid', $category->tid);
+        $success = $query->execute();
+      }
+      break;
+    case 'enable':
+      if ($disabled) {
+        $query = db_update('simplenews_category');
+        $query->fields(array('disabled' => FALSE));
+        $query->condition('tid', $category->tid);
+        $success = $query->execute();
+      }
+      break;
+  }
+
+  // Alert the person requestig the change.
+  $name = check_plain($category->name);
+  $verb = $action . 'd';
+  $replacements = array(
+    '@name' => $name,
+    '@verb' => $verb,
+  );
+  if ($success) {
+    $message = t('The @name category has been @verb.', $replacements);
+  }
+  else {
+    $message = t('The @name category has already been @verb.', $replacements, 'warning');
+  }
+
+  backdrop_set_message($message);
+  backdrop_goto('admin/config/services/simplenews');
 }
 
 /**
