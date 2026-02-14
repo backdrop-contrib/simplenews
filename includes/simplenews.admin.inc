@@ -2118,7 +2118,7 @@ function theme_simplenews_status($variables) {
   // Build the output.
   if (isset($images[$status])) {
     $img_vars = array(
-      'path' => backdrop_get_path('module', 'simplenews') . '/' . $images[$status],
+      'path' => backdrop_get_path('module', 'simplenews') . '/images/' . $images[$status],
       'alt' => $title[$status],
       'title' => $title[$status],
       'getsize' => TRUE,
