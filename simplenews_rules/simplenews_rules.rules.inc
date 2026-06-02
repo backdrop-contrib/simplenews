@@ -52,6 +52,7 @@ function simplenews_rules_rules_action_info() {
           'label' => t('Source'),
           'description' => t('A string to identify the source of this subscription'),
           'optional' => TRUE,
+          'default value' => 'rules',
         ),
         'language' => array(
           'type' => 'token',
