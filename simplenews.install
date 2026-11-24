@@ -61,6 +61,13 @@ function simplenews_schema() {
         'default' => '',
         'description' => 'Sender address for newsletter emails',
       ),
+      'reply_to' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Optional Reply-To address for newsletter emails. Leave empty to use the sender address.',
+      ),
       'hyperlinks' => array(
         'type' => 'int',
         'size' => 'tiny',
@@ -641,6 +648,22 @@ function simplenews_update_1005() {
 }
 
 /**
+ * Add an optional Reply-To address to newsletter categories.
+ */
+function simplenews_update_1006() {
+  $schema = array(
+    'description' => 'Optional Reply-To address for newsletter emails.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  );
+  db_add_field('simplenews_category', 'reply_to', $schema);
+
+  return t('Added an optional Reply-To address to newsletter categories.');
+}
+
+/**
  * Create Simplenews node type.
  */
 function _simplenews_install_nodetype() {
@@ -715,6 +738,7 @@ function _simplenews_init_simplenews_category() {
         $category->from_name      = config_get('system.core', 'site_name');
         $category->email_subject  = '[[simplenews-category:name]] [node:title]';
         $category->from_address   = config_get('system.core', 'site_mail');
+        $category->reply_to       = '';
         $category->format         = 'plain';
         $category->priority       = SIMPLENEWS_PRIORITY_NONE;
         $category->receipt        = 0;

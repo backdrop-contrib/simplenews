@@ -529,6 +529,9 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
 
     // Add user specific header data.
     $headers['From'] = $this->getFromFormatted();
+    if ($reply_to = $this->getReplyToAddress()) {
+      $headers['Reply-To'] = $reply_to;
+    }
     $headers['List-Unsubscribe'] = '<' . token_replace('[simplenews-subscriber:unsubscribe-url]', $this->getTokenContext(), array('sanitize' => FALSE)) . '>';
 
     // Add general headers.
@@ -578,6 +581,18 @@ class SimplenewsSourceNode implements SimplenewsSourceNodeInterface {
    */
   public function getFromAddress() {
     return $this->getCategory()->from_address;
+  }
+
+  /**
+   * Returns the Reply-To address for this newsletter.
+   *
+   * Falls back to an empty string when no separate Reply-To address is
+   * configured for the newsletter category, in which case the mail backend
+   * uses the From address.
+   */
+  public function getReplyToAddress() {
+    $reply_to = $this->getCategory()->reply_to;
+    return !empty($reply_to) ? $reply_to : '';
   }
 
   /**
