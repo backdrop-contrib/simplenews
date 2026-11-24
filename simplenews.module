@@ -2119,7 +2119,7 @@ function simplenews_category_save($category) {
   // Ensure required properties have sane defaults to avoid null inserts.
   $category = (object) $category;
   $category->disabled = isset($category->disabled) ? (int) $category->disabled : 0;
-
+  $category->reply_to = isset($category->reply_to) ? $category->reply_to : '';
   db_merge('simplenews_category')
     ->key(array('tid' => $category->tid))
     ->fields(array(
@@ -2130,6 +2130,7 @@ function simplenews_category_save($category) {
       'from_name' => $category->from_name,
       'email_subject' => $category->email_subject,
       'from_address' => $category->from_address,
+      'reply_to' => $category->reply_to,
       'hyperlinks' => $category->hyperlinks,
       'new_account' => $category->new_account,
       'opt_inout' => $category->opt_inout,

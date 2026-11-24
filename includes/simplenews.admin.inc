@@ -462,6 +462,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'receipt' => $config->get('receipt'),
     'from_name' => $config->get('from_name'),
     'from_address' => $config->get('from_address'),
+    'reply_to' => '',
     'email_subject' => '[[simplenews-category:name]] [node:title]',
     'hyperlinks' => 1,
   );
@@ -603,6 +604,16 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     '#default_value' => $edit['from_address'],
   );
 
+  // Optional Reply-To address, defaults to the From address when empty.
+  $form['simplenews_sender_information']['reply_to'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reply-To email address'),
+    '#description' => t('Optional. Replies to this newsletter are sent to this address instead of the From address. Leave empty to use the From address.'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#default_value' => $edit['reply_to'],
+  );
+
   // Email subject.
   $form['simplenews_subject'] = array(
     '#type' => 'fieldset',
@@ -667,10 +678,13 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
  */
 function simplenews_admin_category_form_validate($form, &$form_state) {
   if ($form_state['clicked_button']['#value'] != t('Delete')) {
-
     // Check for valid email address.
     if (!valid_email_address($form_state['values']['from_address'])) {
-      form_set_error('from_address', t("The sender's email address you supplied is not valid."));
+      form_set_error('from_address', t('The sender\'s email address you supplied is not valid.'));
+    }
+    // An empty Reply-To address means "use the From address".
+    if (!empty($form_state['values']['reply_to']) && !valid_email_address($form_state['values']['reply_to'])) {
+      form_set_error('reply_to', t('The Reply-To email address you supplied is not valid.'));
     }
   }
 }
