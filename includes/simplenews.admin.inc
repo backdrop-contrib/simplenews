@@ -463,7 +463,7 @@ function simplenews_admin_category_form($form, &$form_state, $edit = array()) {
     'from_name' => $config->get('from_name'),
     'from_address' => $config->get('from_address'),
     'reply_to' => '',
-    'email_subject' => '[simplenews-category:name] [node:title]',
+    'email_subject' => '[[simplenews-category:name]] [node:title]',
     'hyperlinks' => 1,
   );
 
